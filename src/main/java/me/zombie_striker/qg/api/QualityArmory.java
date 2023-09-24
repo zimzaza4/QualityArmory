@@ -32,6 +32,7 @@ import me.zombie_striker.qg.config.GunYMLLoader;
 import me.zombie_striker.qg.guns.Gun;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.guns.utils.WeaponType;
+import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,7 +100,7 @@ public class QualityArmory {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				if (QAMain.namesToBypass.contains(player.getName())) {
+				if (QAMain.namesToBypass.contains(player.getName()) || FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) {
 					QAMain.resourcepackReq.add(player.getUniqueId());
 					return;
 				}

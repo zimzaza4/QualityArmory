@@ -24,6 +24,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
@@ -114,8 +115,8 @@ public class CustomGunItem extends AbstractCustomGunItem {
 
 			if (is.getType() == Material.CROSSBOW) {
 				//Now the player will hold the crossbow like a gun
-			//	CrossbowMeta im2 = (CrossbowMeta) im;
-			//	im2.addChargedProjectile(new ItemStack(Material.VOID_AIR));
+			    // CrossbowMeta im2 = (CrossbowMeta) im;
+			    // im2.addChargedProjectile(new ItemStack(Material.ARROW));
 			}
 			is.setItemMeta(im);
 		} else {

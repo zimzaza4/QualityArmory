@@ -152,7 +152,7 @@ public class ParticleHandlers {
 			Location l = loc.clone().add(x, 0, z);
 
 			for (int i = 0; i < 2; i++)
-				loc.getWorld().spawnParticle(Particle.SPELL, l, 0);
+				loc.getWorld().spawnParticle(Particle.SMOKE_NORMAL, l, 0);
 		} catch (Error | Exception e4) {
 		}
 	}
