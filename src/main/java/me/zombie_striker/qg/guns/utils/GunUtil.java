@@ -33,6 +33,7 @@ import ru.beykerykt.minecraft.lightapi.common.LightAPI;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GunUtil {
 
@@ -46,7 +47,18 @@ public class GunUtil {
 	}
 
 	public static void shootHandler(Gun g, Player p, int numberOfBullets) {
-		double sway = g.getSway() * AimManager.getSway(g, p.getUniqueId());
+		double sway = g.getSway(p.getUniqueId()) * AimManager.getSway(g, p.getUniqueId());
+		AtomicInteger counter = AimManager.SHOOT_COUNTER.get(p.getUniqueId());
+		if (counter != null) {
+			if (counter.get() + 2 < 20) {
+				counter.addAndGet(2);
+			} else {
+				counter.set(20);
+			}
+		} else {
+			AimManager.SHOOT_COUNTER.put(p.getUniqueId(), new AtomicInteger(2));
+		}
+
 		if (g.usesCustomProjctiles()) {
 			for (int i = 0; i < numberOfBullets; i++) {
 				Vector go = p.getLocation().getDirection().normalize();

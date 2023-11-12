@@ -14,6 +14,7 @@ import me.zombie_striker.qg.guns.utils.GunRefillerRunnable;
 import me.zombie_striker.qg.guns.utils.GunUtil;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.guns.utils.WeaponType;
+import me.zombie_striker.qg.handlers.AimManager;
 import me.zombie_striker.qg.handlers.IronsightsHandler;
 import me.zombie_striker.qg.handlers.Update19OffhandChecker;
 import me.zombie_striker.qg.utils.LocalUtils;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparable<Gun> {
 
@@ -541,7 +543,7 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public boolean shoot(Player player, boolean holdingRMB) {
-        return Gun.USE_THIS_INSTEAD_OF_INDEVIDUAL_SHOOT_METHODS(this, player, getSway(), holdingRMB);
+        return Gun.USE_THIS_INSTEAD_OF_INDEVIDUAL_SHOOT_METHODS(this, player, getSway(player.getUniqueId()), holdingRMB);
     }
 
     public void setDeathMessage(String deathMessage) {
@@ -625,6 +627,18 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public double getSway() {
+        return acc / 100;
+    }
+
+    public double getSway(UUID player) {
+        AtomicInteger counter = AimManager.SHOOT_COUNTER.get(player);
+        if (counter == null) {
+            return getSway();
+        }
+        return acc / 100 * (counter.get() * 5);
+    }
+
+    public double getMaxSway() {
         return acc;
     }
 
