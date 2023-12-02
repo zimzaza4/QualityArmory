@@ -3,6 +3,8 @@ package me.zombie_striker.qg.handlers;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.cryptomorin.xseries.ReflectionUtils;
 import me.zombie_striker.qg.QAMain;
@@ -19,13 +21,15 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 public class AimManager extends BukkitRunnable implements Listener {
+
+	public static Map<UUID, AtomicInteger> SHOOT_COUNTER = new ConcurrentHashMap<>();
 	private static final Map<UUID, Double> SWAYS = new HashMap<>();
 	private static final Map<UUID, Long> LAST_MOVEMENT = new HashMap<>();
 
 	public static double getSway(Gun gun,UUID uuid) {
 		if(!SWAYS.containsKey(uuid))
-			return gun.getSway()*gun.getMovementMultiplier();
-		return gun.getSway()*Math.pow(SWAYS.get(uuid),gun.getMovementMultiplier());
+			return gun.getSway(uuid)*gun.getMovementMultiplier();
+		return gun.getSway(uuid)*Math.pow(SWAYS.get(uuid),gun.getMovementMultiplier());
 	}
 	
 	public AimManager() {
@@ -37,6 +41,13 @@ public class AimManager extends BukkitRunnable implements Listener {
 		for (Player p : Bukkit.getOnlinePlayers()) {
 			double sway = 1;
 			Gun g = QualityArmory.getGunInHand(p);
+
+			AtomicInteger counter = SHOOT_COUNTER.get(p.getUniqueId());
+			if (counter != null) {
+				if (counter.get() > 1) {
+					counter.decrementAndGet();
+				}
+			}
 			if (g!=null) {
 				if (p.isSneaking() && g.isEnableSwaySneakModifier())
 					sway *= QAMain.swayModifier_Sneak;
@@ -75,6 +86,7 @@ public class AimManager extends BukkitRunnable implements Listener {
 
 	@EventHandler
 	public void onQuit(@NotNull PlayerQuitEvent e) {
+		SHOOT_COUNTER.remove(e.getPlayer().getUniqueId());
 		LAST_MOVEMENT.remove(e.getPlayer().getUniqueId());
 		SWAYS.remove(e.getPlayer().getUniqueId());
 	}
