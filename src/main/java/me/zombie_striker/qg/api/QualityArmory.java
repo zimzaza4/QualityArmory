@@ -512,7 +512,11 @@ public class QualityArmory {
 				} else {
 					message = LocalUtils.colorize(message);
 				}
-				HotbarMessager.sendHotBarMessage(p, message);
+				if (FloodgateApi.getInstance().isFloodgatePlayer(p.getUniqueId())) {
+					p.sendTitle("update_ammo:" + g.getAmmoType().getName() + " " + currentAmountInGun + "/" + ammoamount, "",0,0,0);
+				} else {
+					HotbarMessager.sendHotBarMessage(p, message);
+				}
 			} catch (Error | Exception e5) {
 			}
 		}
