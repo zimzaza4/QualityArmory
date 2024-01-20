@@ -29,7 +29,6 @@ import me.zombie_striker.qg.guns.chargers.*;
 import me.zombie_striker.qg.guns.reloaders.PumpactionReloader;
 import me.zombie_striker.qg.guns.reloaders.SingleBulletReloader;
 import me.zombie_striker.qg.hooks.MimicHookHandler;
-import me.zombie_striker.qg.hooks.MimicHookImpl;
 import me.zombie_striker.qg.hooks.PlaceholderAPIHook;
 import me.zombie_striker.qg.hooks.anticheat.AntiCheatHook;
 import me.zombie_striker.qg.hooks.anticheat.MatrixHook;
@@ -724,6 +723,7 @@ public class QAMain extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new QAListener(), this);
         Bukkit.getPluginManager().registerEvents(new AimManager(), this);
+        new InvisibleBlockHandler().init(this);
         try {
             if (Bukkit.getPluginManager().isPluginEnabled("ChestShop"))
                 Bukkit.getPluginManager().registerEvents(new ChestShopHandler(), this);

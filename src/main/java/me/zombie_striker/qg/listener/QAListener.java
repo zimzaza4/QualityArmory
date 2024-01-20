@@ -870,8 +870,8 @@ public class QAListener implements Listener {
 			if (IronsightsHandler.isAiming(e.getPlayer())) {
 				QAMain.DEBUG("Player is aiming!");
 				try {
-					if ((e.getAction() == Action.RIGHT_CLICK_AIR
-							|| e.getAction() == Action.RIGHT_CLICK_BLOCK) == (QAMain.SWAP_TO_LMB_SHOOT)) {
+					if ((e.getAction() == Action.LEFT_CLICK_AIR
+							|| e.getAction() == Action.LEFT_CLICK_BLOCK) == (QAMain.SWAP_TO_LMB_SHOOT)) {
 						e.setCancelled(true);
 						Gun g = IronsightsHandler.getGunUsed(e.getPlayer());
 						QAMain.DEBUG("Swapping " + g.getName() + " from offhand to main hand to reload!");
@@ -897,7 +897,7 @@ public class QAListener implements Listener {
 			CustomBaseObject qaItem = QualityArmory.getCustomItem(usedItem);
 			if (qaItem != null) {
 				QAMain.DEBUG(qaItem.getName() + " item is being used!");
-				if (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) {
+				if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 					if (((ArmoryBaseObject) qaItem).onLMB(e.getPlayer(), usedItem))
 						e.setCancelled(true);
 				} else {
