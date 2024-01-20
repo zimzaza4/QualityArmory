@@ -183,7 +183,7 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public static void updateAmmo(Gun g, Player player, int amount) {
-        ItemStack current = QualityArmory.isIronSights(player.getInventory().getItemInHand()) ? player.getInventory().getItemInOffHand() : player.getInventory().getItemInHand();
+        ItemStack current = player.getInventory().getItemInHand();
         updateAmmo(g,current,amount);
     }
 
