@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import me.zombie_striker.customitemmanager.*;
+import me.zombie_striker.qg.handlers.GeyserHandler;
 import me.zombie_striker.qg.handlers.HotbarMessager;
 import me.zombie_striker.qg.handlers.IronsightsHandler;
 import me.zombie_striker.qg.hooks.protection.ProtectionHandler;
@@ -32,7 +33,6 @@ import me.zombie_striker.qg.config.GunYMLLoader;
 import me.zombie_striker.qg.guns.Gun;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.guns.utils.WeaponType;
-import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,7 +100,7 @@ public class QualityArmory {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				if (QAMain.namesToBypass.contains(player.getName()) || FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) {
+				if (QAMain.namesToBypass.contains(player.getName()) || (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player))) {
 					QAMain.resourcepackReq.add(player.getUniqueId());
 					return;
 				}
@@ -512,7 +512,7 @@ public class QualityArmory {
 				} else {
 					message = LocalUtils.colorize(message);
 				}
-				if (FloodgateApi.getInstance().isFloodgatePlayer(p.getUniqueId())) {
+				if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(p)) {
 					p.sendTitle("update_ammo:" + g.getAmmoType().getName() + " " + currentAmountInGun + "/" + ammoamount, "",0,0,0);
 				} else {
 					HotbarMessager.sendHotBarMessage(p, message);

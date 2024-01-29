@@ -237,6 +237,7 @@ public class QAMain extends JavaPlugin {
     public static boolean hasProtocolLib = false;
     public static boolean hasViaVersion = false;
     public static boolean hasViaRewind = false;
+    public static boolean hasGeyser = false;
     public static boolean AUTOUPDATE = true;
     public static boolean SWAP_TO_LMB_SHOOT = true;
     public static boolean ENABLE_LORE_INFO = true;
@@ -960,6 +961,10 @@ public class QAMain extends JavaPlugin {
             hasProtocolLib = true;
             ProtocolLibHandler.initRemoveArmswing();
             ProtocolLibHandler.initAimBow();
+        }
+        if (Bukkit.getPluginManager().isPluginEnabled("GeyserUtils")) {
+            hasGeyser = true;
+
         }
 
         if (getServer().getPluginManager().isPluginEnabled("Sentinel"))

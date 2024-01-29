@@ -4,7 +4,6 @@ import com.alessiodp.parties.api.Parties;
 import com.alessiodp.parties.api.interfaces.PartiesAPI;
 import com.alessiodp.parties.api.interfaces.Party;
 import com.alessiodp.parties.api.interfaces.PartyPlayer;
-import me.zimzaza4.geyserutils.spigot.api.PlayerUtils;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.ammo.Ammo;
@@ -29,7 +28,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
-import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 import ru.beykerykt.minecraft.lightapi.common.LightAPI;
 
@@ -785,7 +783,7 @@ public class GunUtil {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						if (FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) {
+						if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player)) {
 							addRecoilWithBedrock(player, g, false);
 						} else if (QAMain.hasProtocolLib && QAMain.isVersionHigherThan(1, 13) && !QAMain.hasViaVersion) {
 							addRecoilWithProtocolLib(player, g, true);
@@ -795,7 +793,7 @@ public class GunUtil {
 				}.runTaskLater(QAMain.getInstance(), 3);
 			}
 		} else {
-			if (FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) {
+			if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player)) {
 				addRecoilWithBedrock(player, g, true);
 			} else if (QAMain.hasProtocolLib && QAMain.isVersionHigherThan(1, 13)) {
 				addRecoilWithProtocolLib(player, g, false);
@@ -817,7 +815,7 @@ public class GunUtil {
 
 	private static void addRecoilWithBedrock(Player player, Gun g, boolean useHighRecoil) {
 		float recoil = (float) (g.getRecoil() * 0.06);
-		CompletableFuture.runAsync(() -> PlayerUtils.shakeCamera(player, recoil, 0.1F, 1));
+		CompletableFuture.runAsync(() -> GeyserHandler.shakeCamera(player, recoil, 0.1F, 1));
 	}
 
 	private static void addRecoilWithTeleport(Player player, Gun g, boolean useHighRecoil) {
