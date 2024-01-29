@@ -51,6 +51,9 @@ public class GunUtil {
 
 	public static void shootHandler(Gun g, Player p, int numberOfBullets) {
 		double sway = g.getSway(p.getUniqueId()) * AimManager.getSway(g, p.getUniqueId());
+		if (numberOfBullets > 1) {
+			sway = g.getBigSway() * AimManager.getSway(g, p.getUniqueId());;
+		}
 		AtomicInteger counter = AimManager.SHOOT_COUNTER.get(p.getUniqueId());
 		if (counter != null) {
 			if (counter.get() + 2 < 20) {

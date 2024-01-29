@@ -630,6 +630,10 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
         return acc / 100;
     }
 
+    public double getBigSway() {
+        return acc;
+    }
+
     public double getSway(UUID player) {
         AtomicInteger counter = AimManager.SHOOT_COUNTER.get(player);
         if (counter == null) {
