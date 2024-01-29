@@ -513,8 +513,7 @@ public class QualityArmory {
 					message = LocalUtils.colorize(message);
 				}
 				if (FloodgateApi.getInstance().isFloodgatePlayer(p.getUniqueId())) {
-					p.sendTitle("update_ammo:" + ChatColor.WHITE + g.getAmmoType().getName() + " " + currentAmountInGun + "/" + ammoamount, "",0,0,0);
-					//				    // TODO only send when shoot and canel send when stop using gun
+					p.sendTitle("update_ammo:" + g.getAmmoType().getName() + " " + currentAmountInGun + "/" + ammoamount, "",0,0,0);
 				} else {
 					HotbarMessager.sendHotBarMessage(p, message);
 				}
