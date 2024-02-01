@@ -31,6 +31,12 @@ public class AimManager extends BukkitRunnable implements Listener {
 			return gun.getSway(uuid)*gun.getMovementMultiplier();
 		return gun.getSway(uuid)*Math.pow(SWAYS.get(uuid),gun.getMovementMultiplier());
 	}
+
+	public static double getBigSway(Gun gun,UUID uuid) {
+		if(!SWAYS.containsKey(uuid))
+			return gun.getBigSway()*gun.getMovementMultiplier();
+		return gun.getBigSway()*Math.pow(SWAYS.get(uuid),gun.getMovementMultiplier());
+	}
 	
 	public AimManager() {
 		this.runTaskTimerAsynchronously(QAMain.getInstance(), 10, 10);

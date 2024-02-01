@@ -50,7 +50,7 @@ public class GunUtil {
 	public static void shootHandler(Gun g, Player p, int numberOfBullets) {
 		double sway = g.getSway(p.getUniqueId()) * AimManager.getSway(g, p.getUniqueId());
 		if (numberOfBullets > 1) {
-			sway = g.getBigSway() * AimManager.getSway(g, p.getUniqueId());;
+			sway = g.getBigSway() * AimManager.getBigSway(g, p.getUniqueId());;
 		}
 		AtomicInteger counter = AimManager.SHOOT_COUNTER.get(p.getUniqueId());
 		if (counter != null) {
@@ -786,7 +786,7 @@ public class GunUtil {
 						if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player)) {
 							addRecoilWithBedrock(player, g, false);
 						} else if (QAMain.hasProtocolLib && QAMain.isVersionHigherThan(1, 13) && !QAMain.hasViaVersion) {
-							addRecoilWithProtocolLib(player, g, true);
+							addRecoilWithVector(player, g, true);
 						} else
 							addRecoilWithTeleport(player, g, true);
 					}
@@ -796,7 +796,7 @@ public class GunUtil {
 			if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player)) {
 				addRecoilWithBedrock(player, g, true);
 			} else if (QAMain.hasProtocolLib && QAMain.isVersionHigherThan(1, 13)) {
-				addRecoilWithProtocolLib(player, g, false);
+				addRecoilWithVector(player, g, false);
 			} else
 				addRecoilWithTeleport(player, g, false);
 		}
@@ -816,6 +816,14 @@ public class GunUtil {
 	private static void addRecoilWithBedrock(Player player, Gun g, boolean useHighRecoil) {
 		float recoil = (float) (g.getRecoil() * 0.06);
 		CompletableFuture.runAsync(() -> GeyserHandler.shakeCamera(player, recoil, 0.1F, 1));
+	}
+
+	private static void addRecoilWithVector(Player player, Gun g, boolean useHighRecoil) {
+		Vector vector = player.getLocation().getDirection().multiply(-g.getRecoil() * (player.isSneaking() ? 0.02 : 0.03));
+		vector.setY(player.isSneaking() ? -0.03 : -0.06);
+
+		player.setVelocity(player.getVelocity().add(vector));
+
 	}
 
 	private static void addRecoilWithTeleport(Player player, Gun g, boolean useHighRecoil) {
