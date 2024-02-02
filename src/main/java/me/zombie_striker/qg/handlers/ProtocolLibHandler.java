@@ -112,7 +112,6 @@ public class ProtocolLibHandler {
 						if (who == null)
 							return;
 						boolean isIronSight = QualityArmory.isIronSights(who.getItemInHand());
-						System.out.println("|||111|||" +isIronSight);
 						ItemStack gunItem = null;
 						for (Pair<EnumWrappers.ItemSlot, ItemStack> pair : items) {
 							if (isIronSight) {

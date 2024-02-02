@@ -72,7 +72,7 @@ public class StickyGrenades extends Grenade {
 						try {
 							for (Entity e : holder.getHolder().getNearbyEntities(radius, radius, radius)) {
 								if (e instanceof LivingEntity) {
-									double dam = Math.max(dmageLevel / e.getLocation().distance(holder.getHolder().getLocation()), dmageLevel * 20);
+									double dam = Math.min(dmageLevel / e.getLocation().distance(holder.getHolder().getLocation()), dmageLevel * 20);
 									QAMain.DEBUG("Grenade-Damaging " + e.getName() + " : " + dam + " DAM.");
 									if (thro == null)
 										((LivingEntity) e).damage(dam);
