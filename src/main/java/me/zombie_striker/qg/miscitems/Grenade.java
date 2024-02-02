@@ -144,7 +144,7 @@ public class Grenade extends CustomBaseObject implements ThrowableItems {
 				try {
 					for (Entity e : h.getHolder().getNearbyEntities(radius, radius, radius)) {
 						if (e instanceof LivingEntity) {
-							double dam = (dmageLevel / e.getLocation().distance(h.getHolder().getLocation()));
+							double dam = Math.max(dmageLevel / e.getLocation().distance(h.getHolder().getLocation()), dmageLevel * 20);
 							QAMain.DEBUG("Grenade-Damaging " + e.getName() + " : " + dam + " DAM.");
 							if (thro == null)
 								((LivingEntity) e).damage(dam);

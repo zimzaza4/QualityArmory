@@ -821,8 +821,11 @@ public class GunUtil {
 	private static void addRecoilWithVector(Player player, Gun g, boolean useHighRecoil) {
 		Vector vector = player.getLocation().getDirection().multiply(-g.getRecoil() * (player.isSneaking() ? 0.02 : 0.03));
 		vector.setY(player.isSneaking() ? -0.03 : -0.06);
-
-		player.setVelocity(player.getVelocity().add(vector));
+		Vector push = player.getVelocity().add(vector);
+		if (player.getVelocity().getY() > 0) {
+			push.setY(-0.03);
+		}
+		player.setVelocity(push);
 
 	}
 

@@ -38,10 +38,10 @@ public class BoundingBoxManager {
 	public static ComplexAnimalBoundingBox GHAST = new ComplexAnimalBoundingBox(4, 2, 0, 4, 2, 0);
 	public static ComplexAnimalBoundingBox GUARDIAN = new ComplexAnimalBoundingBox(1.3, 0.6, 0, 1.3, 0.6, 0);
 
+	public static SlimeBoundingBox SLIME = new SlimeBoundingBox();
 	public static NullBoundingBox NULL = new NullBoundingBox();
 
 	//public static ComplexAnimalBoundingBox CAVE_SPIDER = new ComplexAnimalBoundingBox(0.5,0.5,0.15,0.5,0.2,0.4);
-	//TODO: SLIMES
 	private static HashMap<UUID, AbstractBoundingBox> entityBoundbox = new HashMap<>();
 	private static HashMap<EntityType, AbstractBoundingBox> entityTypeBoundingBox = new HashMap<>();
 
@@ -50,6 +50,7 @@ public class BoundingBoxManager {
 			return entityBoundbox.get(base.getUniqueId());
 		if (entityTypeBoundingBox.containsKey(base.getType()))
 			return entityTypeBoundingBox.get(base.getType());
+		Entity entity;
 		return HUMANOID;
 	}
 
@@ -160,6 +161,11 @@ public class BoundingBoxManager {
 			//1.15
 			setEntityTypeBoundingBox(EntityType.BEE, BAT);
 		} catch (Error | Exception e4) {
+		}
+		try {
+			// slime
+			setEntityTypeBoundingBox(EntityType.SLIME, SLIME);
+		} catch (Throwable e4) {
 		}
 
 		//Just make sure that all new mobs will have a bounding box

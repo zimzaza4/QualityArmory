@@ -5,14 +5,18 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.Pair;
 import com.cryptomorin.xseries.ReflectionUtils;
 import com.cryptomorin.xseries.XMaterial;
-import com.mojang.datafixers.util.Pair;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import me.zombie_striker.qg.guns.Gun;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CrossbowMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -91,102 +95,67 @@ public class ProtocolLibHandler {
 					public void onPacketSending(PacketEvent event) {
 						final Player sender = event.getPlayer();
 						int id = (int) event.getPacket().getModifier().read(0);
-						Object slot;
-						final Object ironsights;
-						if(XMaterial.supports(16)){
-							slot = event.getPacket().getModifier().read(1);
-							ironsights = slot;//event.getPacket().getModifier().read(2);
-						}else{
-							slot = event.getPacket().getModifier().read(1);
-							ironsights = event.getPacket().getModifier().read(2);
-						}
+						List<Pair<EnumWrappers.ItemSlot, ItemStack>> items = event.getPacket().getSlotStackPairLists().readSafely(0);
 						if ((id) == sender.getEntityId()) {
+							return;
+						}
+						if (items == null) {
 							return;
 						}
 						Player who = null;
 						for (Player player : sender.getWorld().getPlayers()) {
-							if (player.getEntityId() == (int) id) {
+							if (player.getEntityId() == id) {
 								who = player;
 								break;
 							}
 						}
 						if (who == null)
 							return;
-						if (!slot.toString().contains("MAINHAND")) {
-							if (QualityArmory.isIronSights(who.getInventory().getItemInMainHand())) {
-								event.setCancelled(true);
+						boolean isIronSight = QualityArmory.isIronSights(who.getItemInHand());
+						System.out.println("|||111|||" +isIronSight);
+						ItemStack gunItem = null;
+						for (Pair<EnumWrappers.ItemSlot, ItemStack> pair : items) {
+							if (isIronSight) {
+								if (pair.getFirst() == EnumWrappers.ItemSlot.OFFHAND) {
+									gunItem = pair.getSecond().clone();
+								}
+							} else {
+								if (pair.getFirst() == EnumWrappers.ItemSlot.MAINHAND) {
+									gunItem = pair.getSecond().clone();
+									break;
+								}
 							}
+						}
+                        Gun gun = QualityArmory.getGun(gunItem);
+
+						if (gunItem == null) {
+							if (isIronSight) event.setCancelled(true);
 							return;
 						}
-						if (who.getItemInHand() != null && who.getItemInHand().getType().name().equals("CROSSBOW") &&
-								QualityArmory.isIronSights(who.getItemInHand()) &&
-								ironsights.toString().contains("crossbow")) {
-							Object is = null;
-
-							Gun gun = QualityArmory.getGun(who.getInventory().getItemInOffHand());
-							if (gun == null || !gun.hasBetterAimingAnimations())
-								return;
-
-							try {
-								is = getCraftItemStack(who.getInventory().getItemInOffHand());
-							} catch (NoSuchMethodException e) {}
-
-							NBTItem item = new NBTItem(who.getInventory().getItemInOffHand());
-							item.setBoolean("Charged",true);
-
-							if(XMaterial.supports(16)){
-								List list = (List) slot;
-								for(Object o : new ArrayList(list)){
-									if(o.toString().contains("MAINHAND")) {
-										Pair pair = (Pair) o;
-										Pair newpair = new Pair(pair.getFirst(), is);
-										list.set(list.indexOf(pair), newpair);
-									}else if(o.toString().contains("OFFHAND")) {
-										list.remove(list.indexOf(o));
-									}
-								}
-								event.getPacket().getModifier().write(1, list);
-							}else{
-								event.getPacket().getModifier().write(2, is);
-							}
-
-							if(!XMaterial.supports(16))
-							new BukkitRunnable() {
-								public void run() {
-									try {
-										PacketContainer pc2 = protocolManager
-												.createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
-
-										//EnumItemSlot e = EnumItemSlot.OFFHAND;
-
-										Object neededSlot = null;
-										Object[] enums = slot.getClass().getEnumConstants();
-										for (Object k : enums) {
-											String name = (String) k.getClass().getMethod("name").invoke(k, new Class[0]);
-											if (name.contains("OFFHAND")) {
-												neededSlot = k;
-												break;
-											}
-										}
-										if(XMaterial.supports(16)){
-											pc2.getModifier().write(0, id)
-													.write(1, ironsights);
-
-										}else {
-											pc2.getModifier().write(0, id)
-													.write(1, neededSlot)
-													.write(2, ironsights);
-										}
-
-										protocolManager.sendServerPacket(event.getPlayer(), pc2);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-
-
-								}
-							}.runTaskLater(QAMain.getInstance(), 1);
+						if (gun == null || !gun.hasBetterAimingAnimations()) {
+							return;
 						}
+						gunItem.setType(Material.CROSSBOW);
+						NBTItem nbtItem = new NBTItem(gunItem);
+						nbtItem.setBoolean("Charged", true);
+						nbtItem.applyNBT(gunItem);
+
+						Pair<EnumWrappers.ItemSlot, ItemStack> needDelete = null;
+
+						for (Pair<EnumWrappers.ItemSlot, ItemStack> pair : items) {
+							if (isIronSight) {
+								if (pair.getFirst() == EnumWrappers.ItemSlot.OFFHAND) {
+									needDelete = pair;
+									break;
+								}
+							}
+							if (pair.getFirst() == EnumWrappers.ItemSlot.MAINHAND) {
+								pair.setSecond(gunItem);
+							}
+						}
+
+						items.remove(needDelete);
+						event.getPacket().getSlotStackPairLists().writeSafely(0, items);
 					}
 				});
 
