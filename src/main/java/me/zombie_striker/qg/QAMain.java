@@ -964,7 +964,8 @@ public class QAMain extends JavaPlugin {
         }
         if (Bukkit.getPluginManager().isPluginEnabled("GeyserUtils")) {
             hasGeyser = true;
-
+            GeyserHandler.initGunAnimation();
+            Bukkit.getPluginManager().registerEvents(new GeyserHandler(), this);
         }
 
         if (getServer().getPluginManager().isPluginEnabled("Sentinel"))

@@ -336,9 +336,10 @@ public class GunUtil {
 					ParticleHandlers.spawnMuzzleSmoke(p, start.clone().add(step.clone().multiply(7)));
 				double distSqrt = maxEntityDistance;
 				Vector stepSmoke = normalizedDirection.clone().multiply(QAMain.smokeSpacing);
+				int d = 0;
 				for (double dist = 0; dist < distSqrt; dist += QAMain.smokeSpacing) {
 					start.add(stepSmoke);
-
+					d++;
 					if (start.getBlock().getType() != Material.AIR) {
 						boolean solid = isSolid(start.getBlock(), start);
 						QAWeaponDamageBlockEvent blockevent = new QAWeaponDamageBlockEvent(p, g, start.getBlock());
@@ -392,7 +393,9 @@ public class GunUtil {
 							}
 						}
 					}*/
-					ParticleHandlers.spawnGunParticles(g, start);
+					if (d > 2 && d % 2 == 0) {
+						ParticleHandlers.spawnGunParticles(g, start);
+					}
 				}
 
 				final Map<Block,Material> regenBlocks = new HashMap<>();
@@ -774,7 +777,7 @@ public class GunUtil {
 	public static void addRecoil(final Player player, final Gun g) {
 		if (g.getRecoil() == 0)
 			return;
-		if (g.getFireRate() >= 4) {
+		if (g.getFireRate() >= 99999) {
 			if (highRecoilCounter.containsKey(player.getUniqueId())) {
 				highRecoilCounter.put(player.getUniqueId(),
 						highRecoilCounter.get(player.getUniqueId()) + g.getRecoil());

@@ -118,7 +118,7 @@ public class ParticleHandlers {
 		try {
 			if (is13) {
 				Particle.DustOptions dust = new Particle.DustOptions(
-						Color.fromRGB((int) (r * 255), (int) (g * 255), (int) (b * 255)), 1);
+						Color.fromRGB((int) (r * 255), (int) (g * 255), (int) (b * 255)), 0.5f);
 				for (Player player : loc.getWorld().getPlayers()) {
 					if (player.getLocation().distanceSquared(loc) < 60 * 60)
 						player.spawnParticle(Particle.REDSTONE, loc.getX(), loc.getY(), loc.getZ(), 0, 0, 0, 0, dust);

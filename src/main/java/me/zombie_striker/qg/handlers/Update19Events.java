@@ -42,14 +42,18 @@ public class Update19Events implements Listener {
 				e.setCancelled(true);
 				IronsightsHandler.unAim(e.getPlayer());
 				BukkitTask task = GunUtil.rapidfireshooters.get(e.getPlayer().getUniqueId());
-				if (task != null)
+				if (task != null) {
+					GunUtil.rapidfireshooters.remove(e.getPlayer().getUniqueId());
 					task.cancel();
+				}
 				return;
 			} else if (QualityArmory.isGun(e.getMainHandItem())) {
 				e.setCancelled(true);
 				BukkitTask task = GunUtil.rapidfireshooters.get(e.getPlayer().getUniqueId());
-				if (task != null)
+				if (task != null) {
+					GunUtil.rapidfireshooters.remove(e.getPlayer().getUniqueId());
 					task.cancel();
+				}
 				return;
 			}
 			Gun g = null;
@@ -65,12 +69,14 @@ public class Update19Events implements Listener {
 				e.setCancelled(true);
 				QAListener.reload(e.getPlayer(),g);
 				BukkitTask task = GunUtil.rapidfireshooters.get(e.getPlayer().getUniqueId());
-				if (task != null)
+				if (task != null) {
+					GunUtil.rapidfireshooters.remove(e.getPlayer().getUniqueId());
 					task.cancel();
+				}
 			}
 
 		} else {
-			Gun g = null;
+			Gun g;
 			if(((g=QualityArmory.getGun(e.getOffHandItem()))!=null) || (g= QualityArmory.getGun(e.getMainHandItem()))!=null){
 				if(g.hasIronSights() && e.getPlayer().isSneaking()){
 					e.setCancelled(true);

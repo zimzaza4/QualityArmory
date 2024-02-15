@@ -30,10 +30,14 @@ public class RocketProjectile implements RealtimeCalculationProjectile {
 
 			@Override
 			public void run() {
+				int d = 0;
 				for (int tick = 0; tick < g.getVelocityForRealtimeCalculations(); tick++) {
+					d++;
 					distance--;
 					s.add(dir);
-					ParticleHandlers.spawnGunParticles(g, s);
+					if (d > 2 && d % 2 == 0) {
+						ParticleHandlers.spawnGunParticles(g, s);
+					}
 					boolean entityNear = false;
 					try {
 						List<Entity> e2 = new ArrayList<>(s.getWorld().getNearbyEntities(s, 1, 1, 1));

@@ -875,9 +875,8 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
                 if (QAMain.enableReloadWhenOutOfAmmo) {
                     if (getAmount(player) <= 0) {
                         if (offhand) {
-                            player.getPlayer().setItemInHand(player.getPlayer().getInventory().getItemInOffHand());
-                            player.getPlayer().getInventory().setItemInOffHand(null);
-                            usedItem = player.getPlayer().getItemInHand();
+                            //updateAmmo(this,player.getInventory().getItemInOffHand(), getAmount(player.getItemInHand()));
+                            IronsightsHandler.unAim(player);
                             offhand = false;
                         }
                         if (QAMain.allowGunReload) {
@@ -910,9 +909,8 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
 
                     if (QAMain.enableReloadWhenOutOfAmmo) {
                         if (offhand) {
-                            player.getPlayer().setItemInHand(player.getPlayer().getInventory().getItemInOffHand());
-                            player.getPlayer().getInventory().setItemInOffHand(null);
-                            usedItem = player.getPlayer().getItemInHand();
+                            //updateAmmo(this,player.getInventory().getItemInOffHand(), getAmount(player.getItemInHand()));
+                            IronsightsHandler.unAim(player);
                             offhand = false;
                         }
                         if (QAMain.allowGunReload) {

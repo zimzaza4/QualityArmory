@@ -1018,6 +1018,9 @@ public class QAListener implements Listener {
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onDrop(final PlayerDropItemEvent e) {
+		if (e.getItemDrop().getItemStack() != e.getPlayer().getItemInHand()) {
+			return;
+		}
 		if (e.isCancelled())
 			return;
 		if (QAMain.showOutOfAmmoOnItem) {

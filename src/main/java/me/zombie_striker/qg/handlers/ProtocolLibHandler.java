@@ -94,6 +94,7 @@ public class ProtocolLibHandler {
 					@Override
 					public void onPacketSending(PacketEvent event) {
 						final Player sender = event.getPlayer();
+
 						int id = (int) event.getPacket().getModifier().read(0);
 						List<Pair<EnumWrappers.ItemSlot, ItemStack>> items = event.getPacket().getSlotStackPairLists().readSafely(0);
 						if ((id) == sender.getEntityId()) {
@@ -131,13 +132,15 @@ public class ProtocolLibHandler {
 							if (isIronSight) event.setCancelled(true);
 							return;
 						}
-						if (gun == null || !gun.hasBetterAimingAnimations()) {
+						if (gun == null) {
 							return;
 						}
-						gunItem.setType(Material.CROSSBOW);
-						NBTItem nbtItem = new NBTItem(gunItem);
-						nbtItem.setBoolean("Charged", true);
-						nbtItem.applyNBT(gunItem);
+						if (!(QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(sender))) {
+							gunItem.setType(Material.CROSSBOW);
+							NBTItem nbtItem = new NBTItem(gunItem);
+							nbtItem.setBoolean("Charged", true);
+							nbtItem.applyNBT(gunItem);
+						}
 
 						Pair<EnumWrappers.ItemSlot, ItemStack> needDelete = null;
 
