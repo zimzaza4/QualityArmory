@@ -35,7 +35,7 @@ public class ExplodingRoundProjectile implements RealtimeCalculationProjectile {
 				for (int tick = 0; tick < g.getVelocityForRealtimeCalculations(); tick++) {
 					distance--;
 					s.add(dir);
-					ParticleHandlers.spawnGunParticles(g, s);
+					ParticleHandlers.spawnGunParticles(g, s, player);
 					boolean entityNear = false;
 					try {
 						List<Entity> e2 = new ArrayList<>(s.getWorld().getNearbyEntities(s, 1, 1, 1));

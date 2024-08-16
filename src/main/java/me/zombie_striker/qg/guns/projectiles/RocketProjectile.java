@@ -3,13 +3,12 @@ package me.zombie_striker.qg.guns.projectiles;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cryptomorin.xseries.particles.XParticle;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.api.QAProjectileExplodeEvent;
 import me.zombie_striker.qg.guns.Gun;
 import me.zombie_striker.qg.guns.utils.GunUtil;
-import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.handlers.ExplosionHandler;
-import me.zombie_striker.qg.handlers.MultiVersionLookup;
 import me.zombie_striker.qg.handlers.ParticleHandlers;
 
 import org.bukkit.*;
@@ -36,7 +35,7 @@ public class RocketProjectile implements RealtimeCalculationProjectile {
 					distance--;
 					s.add(dir);
 					if (d > 2 && d % 2 == 0) {
-						ParticleHandlers.spawnGunParticles(g, s);
+						ParticleHandlers.spawnGunParticles(g, s, player);
 					}
 					boolean entityNear = false;
 					try {
@@ -61,7 +60,7 @@ public class RocketProjectile implements RealtimeCalculationProjectile {
 						try {
 							//player.getWorld().playSound(s, WeaponSounds.WARHEAD_EXPLODE.getSoundName(), 10, 0.9f);
 							player.getWorld().playSound(s, Sound.ENTITY_GENERIC_EXPLODE, 8, 0.7f);
-							s.getWorld().spawnParticle(org.bukkit.Particle.EXPLOSION_HUGE, s, 0);
+							s.getWorld().spawnParticle(XParticle.EXPLOSION_EMITTER.get(), s, 0);
 
 						} catch (Error e3) {
 							s.getWorld().playEffect(s, Effect.valueOf("CLOUD"), 0);

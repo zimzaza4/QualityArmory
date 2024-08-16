@@ -1,5 +1,7 @@
 package me.zombie_striker.qg;
 
+import com.cryptomorin.xseries.XPotion;
+import com.cryptomorin.xseries.reflection.XReflection;
 import de.tr7zw.changeme.nbtapi.utils.MinecraftVersion;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
 import me.zombie_striker.customitemmanager.CustomItemManager;
@@ -75,7 +77,6 @@ public class QAMain extends JavaPlugin {
     private static String changelog = null;
 
     public static final int ViaVersionIdfor_1_8 = 106;
-    private static final String SERVER_VERSION;
     public static HashMap<MaterialStorage, Gun> gunRegister = new LinkedHashMap<>();
     public static HashMap<MaterialStorage, Ammo> ammoRegister = new LinkedHashMap<>();
     public static HashMap<MaterialStorage, CustomBaseObject> miscRegister = new LinkedHashMap<>();
@@ -256,13 +257,6 @@ public class QAMain extends JavaPlugin {
     public static List<UUID> currentlyScoping = new ArrayList<>();
     private static QAMain main;
 
-    static {
-        String name = Bukkit.getServer().getClass().getName();
-        name = name.substring(name.indexOf("craftbukkit.") + "craftbukkit.".length());
-        name = name.substring(0, name.indexOf("."));
-        SERVER_VERSION = name;
-    }
-
     private TreeFellerHandler tfh = null;
     private FileConfiguration config;
     private File configFile;
@@ -273,37 +267,23 @@ public class QAMain extends JavaPlugin {
     }
 
     public static boolean isVersionHigherThan(int mainVersion, int secondVersion) {
-        String firstChar = SERVER_VERSION.substring(1, 2);
-        int fInt = Integer.parseInt(firstChar);
-        if (fInt < mainVersion)
-            return false;
-        StringBuilder secondChar = new StringBuilder();
-        for (int i = 3; i < 10; i++) {
-            if (SERVER_VERSION.charAt(i) == '_' || SERVER_VERSION.charAt(i) == '.')
-                break;
-            secondChar.append(SERVER_VERSION.charAt(i));
-        }
-
-        int sInt = Integer.parseInt(secondChar.toString());
-        if (sInt < secondVersion)
-            return false;
-        return true;
+        return XReflection.supports(secondVersion);
     }
 
     public static void toggleNightvision(Player player, Gun g, boolean add) {
         if (add) {
             if (g.getZoomWhenIronSights() > 0) {
                 currentlyScoping.add(player.getUniqueId());
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 1200, g.getZoomWhenIronSights()));
+                player.addPotionEffect(new PotionEffect(XPotion.SLOWNESS.getPotionEffectType(), 1200, g.getZoomWhenIronSights()));
             }
             if (g.hasnightVision()) {
                 currentlyScoping.add(player.getUniqueId());
-                player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 1200, 3));
+                player.addPotionEffect(new PotionEffect(XPotion.NIGHT_VISION.getPotionEffectType(), 1200, 3));
             }
         } else {
             if (currentlyScoping.contains(player.getUniqueId())) {
-                if (player.hasPotionEffect(PotionEffectType.SLOW) && (g == null || g.getZoomWhenIronSights() > 0))
-                    player.removePotionEffect(PotionEffectType.SLOW);
+                if (player.hasPotionEffect(XPotion.SLOWNESS.getPotionEffectType()) && (g == null || g.getZoomWhenIronSights() > 0))
+                    player.removePotionEffect(XPotion.SLOWNESS.getPotionEffectType());
                 boolean potionEff = false;
                 try {
                     potionEff = player.hasPotionEffect(PotionEffectType.NIGHT_VISION)
@@ -503,7 +483,7 @@ public class QAMain extends JavaPlugin {
 
 
     public static Inventory createCustomInventory(int page, boolean shopping) {
-        Inventory shopMenu = Bukkit.createInventory(null, 9 * 6, (shopping ? S_shopName : S_craftingBenchName) + page);
+        Inventory shopMenu = new QAInventoryHolder((shopping ? S_shopName : S_craftingBenchName) + page).getInventory();
         List<Gun> gunslistr = gunRegister.values().stream()
                 .filter(CustomBaseObject::isEnableCrafting)
                 .collect(Collectors.toList());
@@ -1689,6 +1669,25 @@ public class QAMain extends JavaPlugin {
                             sender.sendMessage(prefix + ChatColor.RED + S_NOPERM);
                             return true;
                         }
+
+                        if (args.length == 2) {
+                            CustomBaseObject g = QualityArmory.getCustomItemByName(args[1]);
+                            if (g == null) {
+                                player.openInventory(createCraft(0));
+                                return true;
+                            }
+
+                            if (!lookForIngre(player, g)) {
+                                player.sendMessage(QAMain.prefix + QAMain.S_missingIngredients);
+                                return true;
+                            }
+
+                            removeForIngre(player, g);
+                            player.getInventory().addItem(QualityArmory.getCustomItemAsItemStack(g));
+
+                            return true;
+                        }
+
                         player.openInventory(createCraft(0));
                         return true;
 
@@ -1724,9 +1723,9 @@ public class QAMain extends JavaPlugin {
 
     public void sendHelp(CommandSender sender) {
         sender.sendMessage(LocalUtils.colorize(prefix + " Commands:"));
-        sender.sendMessage(ChatColor.GOLD + "/QA give <Item> <player> <amount>:" + ChatColor.GRAY
+        sender.sendMessage(ChatColor.GOLD + "/QA give <Item> [player] [amount]:" + ChatColor.GRAY
                 + " Gives the sender the item specified (guns, ammo, misc.)");
-        sender.sendMessage(ChatColor.GOLD + "/QA craft:" + ChatColor.GRAY + " Opens the crafting menu.");
+        sender.sendMessage(ChatColor.GOLD + "/QA craft [Item]:" + ChatColor.GRAY + " Opens the crafting menu.");
         sender.sendMessage(ChatColor.GOLD + "/QA shop: " + ChatColor.GRAY + "Opens the shop menu");
 
         sender.sendMessage(ChatColor.GOLD + "/QA getResourcepack: " + ChatColor.GRAY

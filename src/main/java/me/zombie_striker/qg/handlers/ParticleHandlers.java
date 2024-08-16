@@ -1,6 +1,7 @@
 package me.zombie_striker.qg.handlers;
 
-import com.cryptomorin.xseries.ReflectionUtils;
+import com.cryptomorin.xseries.particles.XParticle;
+import com.cryptomorin.xseries.reflection.XReflection;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.guns.Gun;
 import org.bukkit.Bukkit;
@@ -16,12 +17,12 @@ public class ParticleHandlers {
 	public static boolean is13 = true;
 
 	public static void initValues() {
-		is13 = ReflectionUtils.supports(13);
+		is13 = XReflection.supports(13);
 	}
 
 	public static void spawnExplosion(Location loc) {
 		try {
-			loc.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, loc, 1);
+			loc.getWorld().spawnParticle(XParticle.EXPLOSION_EMITTER.get(), loc, 1);
 		} catch (Error | Exception e4) {
 		}
 		// TODO: Do lights n stuff
@@ -100,20 +101,42 @@ public class ParticleHandlers {
 		}
 	}
 
-	public static void spawnGunParticles(Gun g, Location loc) {
+	public static void spawnGunParticles(Gun g, Location loc, Player player) {
 		try {
 			if (g.getParticle() != null)
-				if (g.getParticle() == Particle.REDSTONE) {
-					spawnParticle(g.getParticleR(), g.getParticleG(), g.getParticleB(), loc);
-				} else if (g.getParticle() == Particle.BLOCK_CRACK || g.getParticle() == Particle.BLOCK_DUST || g.getParticle() == Particle.FALLING_DUST) {
+				if (g.getParticle() == XParticle.DUST.get()) {
+					spawnParticle(g.getParticleR(), g.getParticleG(), g.getParticleB(), loc, player);
+				} else if (g.getParticle() == XParticle.BLOCK.get() || g.getParticle() == Particle.BLOCK || g.getParticle() == Particle.FALLING_DUST) {
 					loc.getWorld().spawnParticle(g.getParticle(), loc, 1, g.getParticleMaterial().createBlockData());
 				} else {
-					loc.getWorld().spawnParticle(g.getParticle(), loc, g.getParticleData());
+					player.spawnParticle(g.getParticle(), loc, g.getParticleData());
 				}
 		} catch (Error | Exception e4) {
 		}
 	}
 
+	public static void spawnParticle(double r, double g, double b, Location loc, Player player) {
+		try {
+			if (is13) {
+				Particle.DustOptions dust = new Particle.DustOptions(
+						Color.fromRGB((int) (r * 255), (int) (g * 255), (int) (b * 255)), 0.5f);
+				if (player.getLocation().distanceSquared(loc) < 60 * 60)
+					player.spawnParticle(XParticle.DUST.get(), loc.getX(), loc.getY(), loc.getZ(), 0, 0, 0, 0, dust);
+
+				/*Particle.DustOptions dust = new Particle.DustOptions(
+						Color.fromRGB((int) (r * 255), (int) (g * 255), (int) (b * 255)), 1);
+				loc.getWorld().spawnParticle(Particle.REDSTONE, loc.getX(), loc.getY(), loc.getZ(), 0, 0, 0, 0, dust);*/
+			} else {
+
+				if (player.getLocation().distanceSquared(loc) < 60 * 60)
+					player.spawnParticle(XParticle.DUST.get(), loc.getX(), loc.getY(), loc.getZ(), 0, r, g, b, 1);
+
+				//loc.getWorld().spawnParticle(Particle.REDSTONE, loc.getX(), loc.getY(), loc.getZ(), 0, r, g, b, 1);
+			}
+		} catch (Error | Exception e45) {
+			e45.printStackTrace();
+		}
+	}
 	public static void spawnParticle(double r, double g, double b, Location loc) {
 		try {
 			if (is13) {
@@ -121,7 +144,7 @@ public class ParticleHandlers {
 						Color.fromRGB((int) (r * 255), (int) (g * 255), (int) (b * 255)), 0.5f);
 				for (Player player : loc.getWorld().getPlayers()) {
 					if (player.getLocation().distanceSquared(loc) < 60 * 60)
-						player.spawnParticle(Particle.REDSTONE, loc.getX(), loc.getY(), loc.getZ(), 0, 0, 0, 0, dust);
+						player.spawnParticle(XParticle.DUST.get(), loc.getX(), loc.getY(), loc.getZ(), 0, 0, 0, 0, dust);
 				}
 				/*Particle.DustOptions dust = new Particle.DustOptions(
 						Color.fromRGB((int) (r * 255), (int) (g * 255), (int) (b * 255)), 1);
@@ -130,7 +153,7 @@ public class ParticleHandlers {
 
 				for (Player player : loc.getWorld().getPlayers()) {
 					if (player.getLocation().distanceSquared(loc) < 60 * 60)
-						player.spawnParticle(Particle.REDSTONE, loc.getX(), loc.getY(), loc.getZ(), 0, r, g, b, 1);
+						player.spawnParticle(XParticle.DUST.get(), loc.getX(), loc.getY(), loc.getZ(), 0, r, g, b, 1);
 				}
 				//loc.getWorld().spawnParticle(Particle.REDSTONE, loc.getX(), loc.getY(), loc.getZ(), 0, r, g, b, 1);
 			}
@@ -152,7 +175,7 @@ public class ParticleHandlers {
 			Location l = loc.clone().add(x, 0, z);
 
 			for (int i = 0; i < 2; i++)
-				loc.getWorld().spawnParticle(Particle.SMOKE_NORMAL, l, 0);
+				loc.getWorld().spawnParticle(XParticle.LARGE_SMOKE.get(), l, 0);
 		} catch (Error | Exception e4) {
 		}
 	}

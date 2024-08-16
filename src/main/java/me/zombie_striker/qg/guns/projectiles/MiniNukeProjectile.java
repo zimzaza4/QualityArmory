@@ -36,7 +36,7 @@ public MiniNukeProjectile() {
 					distance--;
 					s.add(dir);
 					if (d > 2 && d % 2 == 0) {
-						ParticleHandlers.spawnGunParticles(g, s);
+						ParticleHandlers.spawnGunParticles(g, s, player);
 					}
 					try {
 						player.getWorld().playSound(s, MultiVersionLookup.getDragonGrowl(), 1, 2f);

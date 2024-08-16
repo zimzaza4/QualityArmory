@@ -13,10 +13,7 @@ import me.zombie_striker.qg.attachments.AttachmentBase;
 import me.zombie_striker.qg.guns.Gun;
 import me.zombie_striker.qg.guns.utils.GunRefillerRunnable;
 import me.zombie_striker.qg.guns.utils.GunUtil;
-import me.zombie_striker.qg.handlers.BulletWoundHandler;
-import me.zombie_striker.qg.handlers.EconHandler;
-import me.zombie_striker.qg.handlers.IronsightsHandler;
-import me.zombie_striker.qg.handlers.Update19OffhandChecker;
+import me.zombie_striker.qg.handlers.*;
 import me.zombie_striker.qg.miscitems.Grenade;
 import me.zombie_striker.qg.miscitems.MeleeItems;
 import org.bukkit.*;
@@ -254,6 +251,8 @@ public class QAListener implements Listener {
 			}
 		}
 
+		if (!(e.getInventory().getHolder() instanceof QAInventoryHolder)) return;
+
 		if (e.getView().getTitle().startsWith((QAMain.S_craftingBenchName)) || e.getView().getTitle().startsWith((QAMain.S_shopName))) {
 			if (e.getClick().isShiftClick()) {
 				e.setCancelled(true);
@@ -361,6 +360,7 @@ public class QAListener implements Listener {
 
 						if (g instanceof Gun) {
 							QAGunGiveEvent event = new QAGunGiveEvent(((Player) e.getWhoClicked()), ((Gun) g), QAGunGiveEvent.Cause.SHOP);
+							Bukkit.getPluginManager().callEvent(event);
 							if (event.isCancelled()) return;
 							g = event.getGun();
 						}
@@ -473,7 +473,7 @@ public class QAListener implements Listener {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "unchecked"})
 	@EventHandler
 	public void onPickup(PlayerPickupItemEvent e) {
 		if (e.isCancelled())
@@ -488,8 +488,8 @@ public class QAListener implements Listener {
 				Gun g = QualityArmory.getGun(e.getItem().getItemStack());
 				try {
 					if (QAMain.AutoDetectResourcepackVersion && !QAMain.MANUALLYSELECT18) {
-						if (us.myles.ViaVersion.bukkit.util.ProtocolSupportUtil
-								.getProtocolVersion(e.getPlayer()) < QAMain.ViaVersionIdfor_1_8) {
+						if (com.viaversion.viaversion.api.Via.getAPI()
+								.getPlayerVersion(e.getPlayer()) < QAMain.ViaVersionIdfor_1_8) {
 							if (!g.is18Support()) {
 								for (Gun g2 : QAMain.gunRegister.values()) {
 									if (g2.is18Support()) {
@@ -513,8 +513,8 @@ public class QAListener implements Listener {
 								}
 							}
 						} else {
-							if (us.myles.ViaVersion.bukkit.util.ProtocolSupportUtil
-									.getProtocolVersion(e.getPlayer()) >= QAMain.ViaVersionIdfor_1_8) {
+							if (com.viaversion.viaversion.api.Via.getAPI()
+									.getPlayerVersion(e.getPlayer()) >= QAMain.ViaVersionIdfor_1_8) {
 								if (g.is18Support()) {
 									for (Gun g2 : QAMain.gunRegister.values()) {
 										if (!g2.is18Support()) {
