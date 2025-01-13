@@ -4,6 +4,8 @@ import com.alessiodp.parties.api.Parties;
 import com.alessiodp.parties.api.interfaces.PartiesAPI;
 import com.alessiodp.parties.api.interfaces.Party;
 import com.alessiodp.parties.api.interfaces.PartyPlayer;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.ammo.Ammo;
@@ -115,10 +117,11 @@ public class GunUtil {
 			normalizedDirection = normalizedDirection.normalize();
 			Vector step = normalizedDirection.clone().multiply(QAMain.bulletStep);
 
-			Entity hitTarget = null;
-			AbstractBoundingBox hitBox = null;
+			// Entity hitTarget = null;
+			// AbstractBoundingBox hitBox = null;
 
-			Location bulletHitLoc = null;
+			// Location bulletHitLoc = null;
+			List<HitResult> results = new ArrayList<>();
 
 			double maxDistance = getTargetedSolidMaxDistance(step, start, range);
 			double maxEntityDistance = maxDistance;
@@ -177,13 +180,14 @@ public class GunUtil {
 						for (double testDistance = startDistance; testDistance < entityDistance + (checkDistanceMax); testDistance += step.length()) {
 							bulletLocationTest.add(step);
 							if (box.intersects(p, bulletLocationTest, e)) {
-								bulletHitLoc = bulletLocationTest;
+
 								maxEntityDistance = entityDistance;
-								maxEntityDistanceSquared = entityDistanceSquared;
-								hitTarget = e;
-								hitBox = box;
+								HitResult result = new HitResult(e, box, bulletLocationTest);
+								results.add(result);
 								//headShot = box.allowsHeadshots() ? box.intersectsHead(bulletLocationTest, e) : false;
-								break;
+								if (g.getWeaponType() == WeaponType.RPG) {
+									break;
+								}
 							}
 						}
 					}
@@ -191,177 +195,187 @@ public class GunUtil {
 			}
 			time2 = System.currentTimeMillis();
 
+			int i2 = 1;
+			if (results.isEmpty()) {
+				results.add(new HitResult(null, null, null));
+			}
+			for (HitResult result : results) {
 
-			if (hitTarget != null) {
-				if (!(hitTarget instanceof Player) || QualityArmory.allowGunsInRegion(hitTarget.getLocation())) {
+				Entity hitTarget = result.hitTarget;
+				AbstractBoundingBox hitBox = result.hitBox;
+				Location bulletHitLoc = result.bulletHitLoc;
+				boolean isLast = (i2 == results.size());
 
-					boolean headshot = hitBox.allowsHeadshots() && hitBox.intersectsHead(bulletHitLoc, hitTarget);
-					if (headshot) {
-						QAMain.DEBUG("Headshot!");
-						if (QAMain.headshotPling) {
-							try {
-								p.playSound(p.getLocation(), QAMain.headshot_sound, 2, 1);
-								if (!QAMain.isVersionHigherThan(1, 9))
-									try {
-										p.playSound(p.getLocation(), Sound.valueOf("LAVA_POP"), 6, 1);
-									} catch (Error | Exception h4) {
-									}
+				if (hitTarget != null) {
+					if (!(hitTarget instanceof Player) || QualityArmory.allowGunsInRegion(hitTarget.getLocation())) {
 
-							} catch (Error | Exception h4) {
-								p.playSound(p.getLocation(), Sound.valueOf("LAVA_POP"), 1, 1);
+						boolean headshot = hitBox.allowsHeadshots() && hitBox.intersectsHead(bulletHitLoc, hitTarget);
+						if (headshot) {
+							QAMain.DEBUG("Headshot!");
+							if (QAMain.headshotPling) {
+								try {
+									p.playSound(p.getLocation(), QAMain.headshot_sound, 2, 1);
+									if (!QAMain.isVersionHigherThan(1, 9))
+										try {
+											p.playSound(p.getLocation(), Sound.valueOf("LAVA_POP"), 6, 1);
+										} catch (Error | Exception h4) {
+										}
+
+								} catch (Error | Exception h4) {
+									p.playSound(p.getLocation(), Sound.valueOf("LAVA_POP"), 1, 1);
+								}
 							}
 						}
-					}
 
-					boolean negateHeadshot = false;
-					boolean bulletProtection = false;
+						boolean negateHeadshot = false;
+						boolean bulletProtection = false;
 
-					if (hitTarget instanceof Player) {
-						bulletProtection = BulletProtectionUtil.stoppedBullet(p, bulletHitLoc, normalizedDirection);
-						if (headshot) {
-							negateHeadshot = BulletProtectionUtil.negatesHeadshot(p);
-						}
-					}
-
-					double damageMAX = damage * (bulletProtection ? 0.1 : 1)
-							* ((headshot && !negateHeadshot) ? (QAMain.HeadshotOneHit ? 50 * g.getHeadshotMultiplier() : g.getHeadshotMultiplier())
-							: 1);
-
-
-					QAWeaponDamageEntityEvent shootevent = new QAWeaponDamageEntityEvent(p, g, hitTarget, headshot,
-							damage, bulletProtection);
-					Bukkit.getPluginManager().callEvent(shootevent);
-					if (!shootevent.isCancelled()) {
-						if (headshot) {
-							QAHeadShotEvent headshotevent = new QAHeadShotEvent(hitTarget, p, g);
-							Bukkit.getPluginManager().callEvent(headshotevent);
-							headshot = !headshotevent.isCancelled();
-						}
 						if (hitTarget instanceof Player) {
-							Player player = (Player) hitTarget;
-							if (!QAMain.enableArmorIgnore) {
-								try {
-									// damage = damage * ( 1 - min( 20, max( defensePoints / 5, defensePoints -
-									// damage / ( toughness / 4 + 2 ) ) ) / 25 )
-									double defensePoints = 0;
-									double toughness = 0;
-									for (ItemStack is : new ItemStack[]{player.getInventory().getHelmet(),
-											player.getInventory().getChestplate(), player.getInventory().getLeggings(),
-											player.getInventory().getBoots()}) {
-										if (is != null) {
-											Collection<AttributeModifier> attributes = is.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ARMOR);
-											Collection<AttributeModifier> toughnessAttributes = is.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ARMOR_TOUGHNESS);
+							bulletProtection = BulletProtectionUtil.stoppedBullet(p, bulletHitLoc, normalizedDirection);
+							if (headshot) {
+								negateHeadshot = BulletProtectionUtil.negatesHeadshot(p);
+							}
+						}
 
-											if (attributes != null && !attributes.isEmpty())
-												for (AttributeModifier a : attributes)
-													defensePoints += a.getAmount();
-											if (toughnessAttributes != null && !toughnessAttributes.isEmpty())
-												for (AttributeModifier a : toughnessAttributes)
-													toughness += a.getAmount();
+						double damageMAX = damage * (bulletProtection ? 0.1 : 1)
+								* ((headshot && !negateHeadshot) ? (QAMain.HeadshotOneHit ? 50 * g.getHeadshotMultiplier() : g.getHeadshotMultiplier())
+								: 1);
+
+
+						QAWeaponDamageEntityEvent shootevent = new QAWeaponDamageEntityEvent(p, g, hitTarget, headshot,
+								damage, bulletProtection);
+						Bukkit.getPluginManager().callEvent(shootevent);
+						if (!shootevent.isCancelled()) {
+							if (headshot) {
+								QAHeadShotEvent headshotevent = new QAHeadShotEvent(hitTarget, p, g);
+								Bukkit.getPluginManager().callEvent(headshotevent);
+								headshot = !headshotevent.isCancelled();
+							}
+							if (hitTarget instanceof Player) {
+								Player player = (Player) hitTarget;
+								if (!QAMain.enableArmorIgnore) {
+									try {
+										// damage = damage * ( 1 - min( 20, max( defensePoints / 5, defensePoints -
+										// damage / ( toughness / 4 + 2 ) ) ) / 25 )
+										double defensePoints = 0;
+										double toughness = 0;
+										for (ItemStack is : new ItemStack[]{player.getInventory().getHelmet(),
+												player.getInventory().getChestplate(), player.getInventory().getLeggings(),
+												player.getInventory().getBoots()}) {
+											if (is != null) {
+												Collection<AttributeModifier> attributes = is.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ARMOR);
+												Collection<AttributeModifier> toughnessAttributes = is.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ARMOR_TOUGHNESS);
+
+												if (attributes != null && !attributes.isEmpty())
+													for (AttributeModifier a : attributes)
+														defensePoints += a.getAmount();
+												if (toughnessAttributes != null && !toughnessAttributes.isEmpty())
+													for (AttributeModifier a : toughnessAttributes)
+														toughness += a.getAmount();
+											}
 										}
+
+										QAMain.DEBUG("Applied armor protection: " + defensePoints);
+
+										damageMAX = damageMAX / (1 - Math.min(20, Math.max(defensePoints / 5,
+												defensePoints - damageMAX / (toughness / 4 + 2))) / 25);
+									} catch (Error | Exception e5) {
+										QAMain.DEBUG("An error has occurred: " + e5.getMessage());
 									}
+								}
 
-									QAMain.DEBUG("Applied armor protection: " + defensePoints);
-
-									damageMAX = damageMAX / (1 - Math.min(20, Math.max(defensePoints / 5,
-											defensePoints - damageMAX / (toughness / 4 + 2))) / 25);
-								} catch (Error | Exception e5) {
-									QAMain.DEBUG("An error has occurred: " + e5.getMessage());
+								if (!bulletProtection) {
+									BulletWoundHandler.bulletHit((Player) hitTarget,
+											g.getAmmoType() == null ? 1 : g.getAmmoType().getPiercingDamage());
+								} else {
+									hitTarget.sendMessage(QAMain.S_BULLETPROOFSTOPPEDBLEEDING);
 								}
 							}
 
-							if (!bulletProtection) {
-								BulletWoundHandler.bulletHit((Player) hitTarget,
-										g.getAmmoType() == null ? 1 : g.getAmmoType().getPiercingDamage());
+							if (hitTarget instanceof LivingEntity) {
+								((LivingEntity) hitTarget).setNoDamageTicks(0);
+								QAMain.DEBUG("Damaging entity " + hitTarget.getName() + " ( "
+										+ ((LivingEntity) hitTarget).getHealth() + "/"
+										+ ((LivingEntity) hitTarget).getMaxHealth() + " :" + damageMAX + " DAM)");
+							}
+							if (QAMain.anticheatFix || p.hasMetadata("NPC")) {
+								if (hitTarget instanceof Damageable) {
+									((Damageable) hitTarget).damage(damageMAX);
+								} else if (hitTarget instanceof EnderDragon) {
+									((EnderDragon) hitTarget).damage(damageMAX);
+								} else if (hitTarget instanceof EnderDragonPart) {
+									((EnderDragonPart) hitTarget).damage(damageMAX);
+								}
 							} else {
-								hitTarget.sendMessage(QAMain.S_BULLETPROOFSTOPPEDBLEEDING);
+								if (hitTarget instanceof Damageable) {
+									((Damageable) hitTarget).damage(damageMAX, p);
+								} else if (hitTarget instanceof EnderDragon) {
+									((EnderDragon) hitTarget).damage(damageMAX, p);
+								} else if (hitTarget instanceof EnderDragonPart) {
+									((EnderDragonPart) hitTarget).damage(damageMAX, p);
+								}
 							}
-						}
 
-						if (hitTarget instanceof LivingEntity) {
-							((LivingEntity) hitTarget).setNoDamageTicks(0);
-							QAMain.DEBUG("Damaging entity " + hitTarget.getName() + " ( "
-									+ ((LivingEntity) hitTarget).getHealth() + "/"
-									+ ((LivingEntity) hitTarget).getMaxHealth() + " :" + damageMAX + " DAM)");
-						}
-						if(QAMain.anticheatFix || p.hasMetadata("NPC")) {
-							if (hitTarget instanceof Damageable) {
-								((Damageable) hitTarget).damage(damageMAX);
-							} else if (hitTarget instanceof EnderDragon) {
-								((EnderDragon) hitTarget).damage(damageMAX);
-							} else if (hitTarget instanceof EnderDragonPart) {
-								((EnderDragonPart) hitTarget).damage(damageMAX);
+
+							if (hitTarget.getPassenger() instanceof Damageable) {
+								QAMain.DEBUG("Found a passenger (" + hitTarget.getPassenger().getName() + "). Damaging it.");
+
+								QAWeaponDamageEntityEvent passengerShoot = new QAWeaponDamageEntityEvent(p, g, hitTarget.getPassenger(), false,
+										damage, bulletProtection);
+								Bukkit.getPluginManager().callEvent(passengerShoot);
+
+								if (!passengerShoot.isCancelled()) {
+									((Damageable) hitTarget.getPassenger()).damage(damageMAX, p);
+								}
 							}
-						}else {
-							if (hitTarget instanceof Damageable) {
-								((Damageable) hitTarget).damage(damageMAX, p);
-							} else if (hitTarget instanceof EnderDragon) {
-								((EnderDragon) hitTarget).damage(damageMAX, p);
-							} else if (hitTarget instanceof EnderDragonPart) {
-								((EnderDragonPart) hitTarget).damage(damageMAX, p);
-							}
-						}
-
-
-						if (hitTarget.getPassenger() instanceof Damageable) {
-							QAMain.DEBUG("Found a passenger (" + hitTarget.getPassenger().getName() + "). Damaging it.");
-
-							QAWeaponDamageEntityEvent passengerShoot = new QAWeaponDamageEntityEvent(p, g, hitTarget.getPassenger(), false,
-									damage, bulletProtection);
-							Bukkit.getPluginManager().callEvent(passengerShoot);
-
-							if (!passengerShoot.isCancelled()) {
-								((Damageable) hitTarget.getPassenger()).damage(damageMAX, p);
-							}
-						}
-					} else {
-						if (hitTarget instanceof LivingEntity) {
-							QAMain.DEBUG("Damaging entity CANCELED " + hitTarget.getName() + " ( "
-									+ ((LivingEntity) hitTarget).getHealth() + "/"
-									+ ((LivingEntity) hitTarget).getMaxHealth() + " :" + damageMAX + " DAM)");
 						} else {
-							QAMain.DEBUG("Damaging entity CANCELED " + hitTarget.getType() + ".");
+							if (hitTarget instanceof LivingEntity) {
+								QAMain.DEBUG("Damaging entity CANCELED " + hitTarget.getName() + " ( "
+										+ ((LivingEntity) hitTarget).getHealth() + "/"
+										+ ((LivingEntity) hitTarget).getMaxHealth() + " :" + damageMAX + " DAM)");
+							} else {
+								QAMain.DEBUG("Damaging entity CANCELED " + hitTarget.getType() + ".");
+							}
 						}
-					}
 
+					}
+				} else {
+					QAMain.DEBUG("No entities hit.");
 				}
-			} else {
-				QAMain.DEBUG("No entities hit.");
-			}
-			time3 = System.currentTimeMillis();
-			if (QAMain.enableBulletTrails) {
-				List<Player> nonheard = start.getWorld().getPlayers();
-				nonheard.remove(p);
-				if (g.useMuzzleSmoke())
-					ParticleHandlers.spawnMuzzleSmoke(p, start.clone().add(step.clone().multiply(7)));
-				double distSqrt = maxEntityDistance;
-				Vector stepSmoke = normalizedDirection.clone().multiply(QAMain.smokeSpacing);
-				int d = 0;
-				for (double dist = 0; dist < distSqrt; dist += QAMain.smokeSpacing) {
-					start.add(stepSmoke);
-					d++;
-					if (start.getBlock().getType() != Material.AIR) {
-						boolean solid = isSolid(start.getBlock(), start);
-						QAWeaponDamageBlockEvent blockevent = new QAWeaponDamageBlockEvent(p, g, start.getBlock());
-						Bukkit.getPluginManager().callEvent(blockevent);
-						if (!blockevent.isCancelled()) {
-							if ((solid || isBreakable(start.getBlock(), start)) && !blocksThatWillPLAYBreak.contains(
-									new Location(start.getWorld(), start.getBlockX(), start.getBlockY(), start.getBlockZ()))) {
-								blocksThatWillPLAYBreak.add(
-										new Location(start.getWorld(), start.getBlockX(), start.getBlockY(), start.getBlockZ()));
+				time3 = System.currentTimeMillis();
+				if (QAMain.enableBulletTrails && isLast) {
+					List<Player> nonheard = start.getWorld().getPlayers();
+					nonheard.remove(p);
+					if (g.useMuzzleSmoke())
+						ParticleHandlers.spawnMuzzleSmoke(p, start.clone().add(step.clone().multiply(7)));
+					double distSqrt = maxEntityDistance;
+					Vector stepSmoke = normalizedDirection.clone().multiply(QAMain.smokeSpacing);
+					int d = 0;
+					for (double dist = 0; dist < distSqrt; dist += QAMain.smokeSpacing) {
+						start.add(stepSmoke);
+						d++;
+						if (start.getBlock().getType() != Material.AIR) {
+							boolean solid = isSolid(start.getBlock(), start);
+							QAWeaponDamageBlockEvent blockevent = new QAWeaponDamageBlockEvent(p, g, start.getBlock());
+							Bukkit.getPluginManager().callEvent(blockevent);
+							if (!blockevent.isCancelled()) {
+								if ((solid || isBreakable(start.getBlock(), start)) && !blocksThatWillPLAYBreak.contains(
+										new Location(start.getWorld(), start.getBlockX(), start.getBlockY(), start.getBlockZ()))) {
+									blocksThatWillPLAYBreak.add(
+											new Location(start.getWorld(), start.getBlockX(), start.getBlockY(), start.getBlockZ()));
+								}
+
+								final Block block = start.getBlock();
+								final Material type = block.getType();
+								if (isLast && (QAMain.destructableBlocks.contains(type) || g.getBreakableMaterials().contains(type)) && ProtectionHandler.canBreak(start)) {
+									blocksThatWillBreak.add(block);
+								}
 							}
 
-							final Block block = start.getBlock();
-							final Material type = block.getType();
-							if ((QAMain.destructableBlocks.contains(type) || g.getBreakableMaterials().contains(type)) && ProtectionHandler.canBreak(start)) {
-								blocksThatWillBreak.add(block);
+							if (!solid) {
+								continue;
 							}
 						}
-
-						if (!solid) {
-							continue;
-						}
-					}
 
 					/*try {
 						int control = 3;
@@ -393,90 +407,95 @@ public class GunUtil {
 							}
 						}
 					}*/
-					if (d > 2 && d % 2 == 0) {
-						ParticleHandlers.spawnGunParticles(g, start, p);
-					}
-				}
-
-				final Map<Block,Material> regenBlocks = new HashMap<>();
-				for (Block l : blocksThatWillBreak) {
-					QAMain.DEBUG("Breaking " + l.getX() + " " + l.getY() + " " + l.getZ() + ": " + l.getType());
-					QAWeaponDamageBlockEvent event = new QAWeaponDamageBlockEvent(p,g,l);
-					Bukkit.getPluginManager().callEvent(event);
-					if (!event.isCancelled()) {
-						if (!l.getType().isAir()) regenBlocks.put(l,l.getType());
-						if (QAMain.regenDestructableBlocksAfter > 0) {
-							l.setType(Material.AIR);
-						} else {
-							l.breakNaturally();
+						if (d > 2 && d % 2 == 0) {
+							ParticleHandlers.spawnGunParticles(g, start, p);
 						}
-						CoreProtectHook.logBreak(l,p);
 					}
-				}
 
-				if (QAMain.regenDestructableBlocksAfter > 0) {
-					QAMain.DEBUG("Scheduling replacement of " + regenBlocks.size() + " blocks");
-					new BukkitRunnable() {
-						@Override
-						public void run() {
-							QAMain.DEBUG("Replacing " + regenBlocks.size() + " blocks");
-
-							for (Block l : regenBlocks.keySet()) {
-								l.setType(regenBlocks.get(l));
-								CoreProtectHook.logPlace(l,p);
+					final Map<Block, Material> regenBlocks = new HashMap<>();
+					for (Block l : blocksThatWillBreak) {
+						QAMain.DEBUG("Breaking " + l.getX() + " " + l.getY() + " " + l.getZ() + ": " + l.getType());
+						QAWeaponDamageBlockEvent event = new QAWeaponDamageBlockEvent(p, g, l);
+						Bukkit.getPluginManager().callEvent(event);
+						if (!event.isCancelled()) {
+							if (!l.getType().isAir()) regenBlocks.put(l, l.getType());
+							if (QAMain.regenDestructableBlocksAfter > 0) {
+								l.setType(Material.AIR);
+							} else {
+								l.breakNaturally();
 							}
+							CoreProtectHook.logBreak(l, p);
 						}
-					}.runTaskLater(QAMain.getInstance(), QAMain.regenDestructableBlocksAfter * 20L);
-				}
-			}
+					}
 
-			time4point5 = System.currentTimeMillis();
-			// TODO: Do lights n stuff
-			try {
-				if (Bukkit.getPluginManager().getPlugin("LightAPI") != null) {
-					if (p.getEyeLocation().getBlock().getLightLevel() < g.getLightOnShoot()) {
-						final Location loc = p.getEyeLocation().clone();
-						LightAPI.get().setLightLevel(loc.getWorld().getName(),loc.getBlockX(),loc.getBlockY(),loc.getBlockZ(), g.getLightOnShoot());
+					if (QAMain.regenDestructableBlocksAfter > 0) {
+						QAMain.DEBUG("Scheduling replacement of " + regenBlocks.size() + " blocks");
 						new BukkitRunnable() {
-
 							@Override
 							public void run() {
-								LightAPI.get().setLightLevel(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 0);
-							}
-						}.runTaskLater(QAMain.getInstance(), 3);
-					}
-				}
-			} catch (Error | Exception e5) {
-			}
+								QAMain.DEBUG("Replacing " + regenBlocks.size() + " blocks");
 
-			// Breaking texture
-			if (QAMain.blockBreakTexture)
-				for (@SuppressWarnings("unused")
-						Location l : blocksThatWillPLAYBreak) {
-					start.getWorld().playSound(start, SoundHandler.getSoundWhenShot(start.getBlock()), 2, 1);
-					try {/*
-					 * for (Player p2 : l.getWorld().getPlayers()) {
-					 * com.comphenix.protocol.events.PacketContainer packet = new
-					 * com.comphenix.protocol.events.PacketContainer(
-					 * com.comphenix.protocol.Packets.Server.BLOCK_BREAK_ANIMATION);
-					 * packet.getIntegers().write(0, p2.getEntityId());
-					 * packet.getBlockPositionModifier().write(1, new
-					 * com.comphenix.protocol.wrappers.BlockPosition(l.getBlockX(), l.getBlockY(),
-					 * l.getBlockZ())); packet.getBytes().write(2, (byte) 4);
-					 * com.comphenix.protocol.ProtocolLibrary.getProtocolManager().sendServerPacket(
-					 * p2, packet); }
-					 */
-					} catch (Error | Exception e4) {
+								for (Block l : regenBlocks.keySet()) {
+									l.setType(regenBlocks.get(l));
+									CoreProtectHook.logPlace(l, p);
+								}
+							}
+						}.runTaskLater(QAMain.getInstance(), QAMain.regenDestructableBlocksAfter * 20L);
 					}
 				}
-			time4 = System.currentTimeMillis();
-		}
-		if (timingsReport) {
-			System.out.println("time1 = " + time1);
-			System.out.println("time2 = " + time2);
-			System.out.println("time3 = " + time3);
-			System.out.println("time3.5 = " + time4point5);
-			System.out.println("time4 = " + time4);
+
+				time4point5 = System.currentTimeMillis();
+				// TODO: Do lights n stuff
+				if (isLast) {
+					try {
+						if (Bukkit.getPluginManager().getPlugin("LightAPI") != null) {
+							if (p.getEyeLocation().getBlock().getLightLevel() < g.getLightOnShoot()) {
+								final Location loc = p.getEyeLocation().clone();
+								LightAPI.get().setLightLevel(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), g.getLightOnShoot());
+								new BukkitRunnable() {
+
+									@Override
+									public void run() {
+										LightAPI.get().setLightLevel(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 0);
+									}
+								}.runTaskLater(QAMain.getInstance(), 3);
+							}
+						}
+					} catch (Error | Exception e5) {
+					}
+				}
+
+				// Breaking texture
+				if (QAMain.blockBreakTexture)
+					for (@SuppressWarnings("unused")
+					Location l : blocksThatWillPLAYBreak) {
+						start.getWorld().playSound(start, SoundHandler.getSoundWhenShot(start.getBlock()), 2, 1);
+						try {/*
+						 * for (Player p2 : l.getWorld().getPlayers()) {
+						 * com.comphenix.protocol.events.PacketContainer packet = new
+						 * com.comphenix.protocol.events.PacketContainer(
+						 * com.comphenix.protocol.Packets.Server.BLOCK_BREAK_ANIMATION);
+						 * packet.getIntegers().write(0, p2.getEntityId());
+						 * packet.getBlockPositionModifier().write(1, new
+						 * com.comphenix.protocol.wrappers.BlockPosition(l.getBlockX(), l.getBlockY(),
+						 * l.getBlockZ())); packet.getBytes().write(2, (byte) 4);
+						 * com.comphenix.protocol.ProtocolLibrary.getProtocolManager().sendServerPacket(
+						 * p2, packet); }
+						 */
+						} catch (Error | Exception e4) {
+						}
+					}
+				time4 = System.currentTimeMillis();
+				i2++;
+				damage = damage / 2;
+				if (timingsReport) {
+					System.out.println("time1 = " + time1);
+					System.out.println("time2 = " + time2);
+					System.out.println("time3 = " + time3);
+					System.out.println("time3.5 = " + time4point5);
+					System.out.println("time4 = " + time4);
+				}
+			}
 		}
 	}
 
@@ -876,5 +895,13 @@ public class GunUtil {
 
 		 return (g.getLastShotForGun().containsKey(player.getUniqueId())
 				&& (System.currentTimeMillis() - g.getLastShotForGun().get(player.getUniqueId()) < showdelay));
+	}
+
+	@Data
+	@AllArgsConstructor
+	public static class HitResult {
+		Entity hitTarget = null;
+		AbstractBoundingBox hitBox = null;
+		Location bulletHitLoc = null;
 	}
 }

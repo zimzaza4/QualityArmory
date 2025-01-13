@@ -10,10 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Sound;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -65,7 +62,7 @@ public class ProxyMines extends Grenade {
 				if (k >= 20) {
 					boolean det = false;
 					for(Entity e : h.getHolder().getNearbyEntities(radius,radius,radius)){
-						if (e instanceof Player) {
+						if (e instanceof Mob) {
 							det = true;
 							break;
 						}

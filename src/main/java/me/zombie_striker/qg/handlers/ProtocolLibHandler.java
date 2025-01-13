@@ -10,18 +10,23 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.Pair;
 import com.cryptomorin.xseries.reflection.XReflection;
+import de.tr7zw.changeme.nbtapi.NBT;
 import de.tr7zw.changeme.nbtapi.NBTItem;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.api.QualityArmory;
 import me.zombie_striker.qg.guns.Gun;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CrossbowMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 
 public class ProtocolLibHandler {
@@ -101,16 +106,16 @@ public class ProtocolLibHandler {
 						if (items == null) {
 							return;
 						}
-						Player who = null;
-						for (Player player : sender.getWorld().getPlayers()) {
-							if (player.getEntityId() == id) {
-								who = player;
+						LivingEntity who = null;
+						for (LivingEntity entity : sender.getWorld().getLivingEntities()) {
+							if (entity.getEntityId() == id) {
+								who = entity;
 								break;
 							}
 						}
 						if (who == null)
 							return;
-						boolean isIronSight = QualityArmory.isIronSights(who.getItemInHand());
+						boolean isIronSight = who.getEquipment() != null && QualityArmory.isIronSights(who.getEquipment().getItemInMainHand());
 						ItemStack gunItem = null;
 						for (Pair<EnumWrappers.ItemSlot, ItemStack> pair : items) {
 							if (isIronSight) {
@@ -134,10 +139,18 @@ public class ProtocolLibHandler {
 							return;
 						}
 						if (!(QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(sender))) {
-							gunItem.setType(Material.CROSSBOW);
-							NBTItem nbtItem = new NBTItem(gunItem);
-							nbtItem.setBoolean("Charged", true);
-							nbtItem.applyNBT(gunItem);
+							// gunItem.setType(Material.CROSSBOW);
+							ItemStack crossbow = new ItemStack(Material.CROSSBOW);
+							CrossbowMeta meta = (CrossbowMeta) crossbow.getItemMeta();
+							meta.setCustomModelData(gunItem.getItemMeta().getCustomModelData());
+							meta.setChargedProjectiles(Collections.singletonList(new ItemStack(Material.ARROW)));
+							crossbow.setItemMeta(meta);
+							gunItem = crossbow;
+							/*
+							NBT.modify(gunItem, nbt -> {
+								nbt.setBoolean("Charged", true);
+							});
+							 */
 						}
 
 						Pair<EnumWrappers.ItemSlot, ItemStack> needDelete = null;
