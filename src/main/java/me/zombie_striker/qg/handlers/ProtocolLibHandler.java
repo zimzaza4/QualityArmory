@@ -32,11 +32,7 @@ import java.util.List;
 public class ProtocolLibHandler {
 
 	private static ProtocolManager protocolManager;
-
-	private static Object enumArgumentAnchor_EYES = null;
-	private static Class<?> class_ArgumentAnchor = null;
-	// org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
-	private static Class nbtFactClass = null;
+	private static Class<?> nbtFactClass = null;
 	private static Method nbtFactmethod = null;
 
 	public static void initRemoveArmswing() {
@@ -190,18 +186,19 @@ public class ProtocolLibHandler {
 
 
 	public static void sendYawChange(Player player, Vector newDirection) {
-		if (protocolManager == null)
-			protocolManager = ProtocolLibrary.getProtocolManager();
-		final PacketContainer yawpack = protocolManager.createPacket(PacketType.Play.Server.LOOK_AT, false);
-		if (enumArgumentAnchor_EYES == null) {
-			class_ArgumentAnchor = XReflection.getNMSClass("commands.arguments", "ArgumentAnchor$Anchor");
-			enumArgumentAnchor_EYES = ReflectionsUtil.getEnumConstant(class_ArgumentAnchor, "EYES");
+		try {
+			if (protocolManager == null)
+				protocolManager = ProtocolLibrary.getProtocolManager();
+			final PacketContainer yawpack = protocolManager.createPacket(PacketType.Play.Server.LOOK_AT, false);
+			yawpack.getIntegers().write(0, 1);
+			yawpack.getDoubles().write(0, player.getEyeLocation().getX() + newDirection.getX());
+			yawpack.getDoubles().write(1, player.getEyeLocation().getY() + newDirection.getY());
+			yawpack.getDoubles().write(2, player.getEyeLocation().getZ() + newDirection.getZ());
+			yawpack.getBooleans().write(0, false);
+			protocolManager.sendServerPacket(player, yawpack);
+		} catch (Exception e) {
+			QAMain.DEBUG("An error occurred while sending a yaw change packet to " + player.getName());
+			QAMain.DEBUG(e.getMessage());
 		}
-		yawpack.getModifier().write(4, enumArgumentAnchor_EYES);
-		yawpack.getDoubles().write(0, player.getEyeLocation().getX() + newDirection.getX());
-		yawpack.getDoubles().write(1, player.getEyeLocation().getY() + newDirection.getY());
-		yawpack.getDoubles().write(2, player.getEyeLocation().getZ() + newDirection.getZ());
-		yawpack.getBooleans().write(0, false);
-		protocolManager.sendServerPacket(player, yawpack);
 	}
 }

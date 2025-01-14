@@ -131,6 +131,10 @@ public class QualityArmory {
 									}
 								} catch (Error | Exception re4) {
 								}
+
+								//if (QAMain.isVersionHigherThan(1, 19))
+								//	player.setResourcePack(CustomItemManager.getResourcepack(), null, QAMain.kickIfDeniedRequest);
+                                //else
 								player.setResourcePack(CustomItemManager.getResourcepack());
 
 							} catch (Error | Exception e4) {
@@ -641,14 +645,14 @@ public class QualityArmory {
 
 	public static ItemStack getCustomItemAsItemStack(CustomBaseObject obj) {
 		if (obj == null) return null;
-		return CustomItemManager.getItemType("gun").getItem(obj.getItemData().getMat(),obj.getItemData().getData(),obj.getItemData().getVariant());
+		return CustomItemManager.getItemType("gun").getItem(obj.getItemData());
 	}
 
 	public static ItemStack getIronSightsItemStack() {
 		return OLD_ItemFact.getIronSights();
 	}
 
-	
+
 
 
 	public static int getAmmoInInventory(Player player, Ammo a) {

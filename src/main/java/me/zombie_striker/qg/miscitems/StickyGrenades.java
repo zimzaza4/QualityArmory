@@ -3,6 +3,7 @@ package me.zombie_striker.qg.miscitems;
 import com.cryptomorin.xseries.particles.XParticle;
 import me.zombie_striker.customitemmanager.MaterialStorage;
 import me.zombie_striker.qg.QAMain;
+import me.zombie_striker.qg.api.QAGrenadeExplodeEvent;
 import me.zombie_striker.qg.api.QAThrowableExplodeEvent;
 import me.zombie_striker.qg.handlers.ExplosionHandler;
 import org.bukkit.Bukkit;
@@ -13,6 +14,7 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class StickyGrenades extends Grenade {
@@ -68,14 +70,20 @@ public class StickyGrenades extends Grenade {
 						}
 						Player thro = Bukkit.getPlayer(holder.getOwner());
 						try {
-							for (Entity e : holder.getHolder().getNearbyEntities(radius, radius, radius)) {
-								if (e instanceof LivingEntity) {
-									double dam = Math.min(dmageLevel / e.getLocation().distance(holder.getHolder().getLocation()), dmageLevel * 20);
-									QAMain.DEBUG("Grenade-Damaging " + e.getName() + " : " + dam + " DAM.");
-									if (thro == null)
-										((LivingEntity) e).damage(dam);
-									else
-										((LivingEntity) e).damage(dam, thro);
+						    List<Entity> entities = new ArrayList<>(holder.getHolder().getNearbyEntities(radius, radius, radius));
+							QAGrenadeExplodeEvent grenadeExplodeEvent = new QAGrenadeExplodeEvent(holder.getHolder().getLocation(), thrower, entities);
+							Bukkit.getPluginManager().callEvent(grenadeExplodeEvent);
+
+							if (!grenadeExplodeEvent.isCancelled()) {
+								for (Entity e : entities) {
+									if (e instanceof LivingEntity) {
+										double dam = Math.min(dmageLevel / e.getLocation().distance(holder.getHolder().getLocation()), dmageLevel * 20);
+										QAMain.DEBUG("Grenade-Damaging " + e.getName() + " : " + dam + " DAM.");
+										if (thro == null)
+											((LivingEntity) e).damage(dam);
+										else
+											((LivingEntity) e).damage(dam, thro);
+									}
 								}
 							}
 						} catch (Error e) {

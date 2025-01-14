@@ -206,8 +206,8 @@ public class GunUtil {
 				Location bulletHitLoc = result.bulletHitLoc;
 				boolean isLast = (i2 == results.size());
 
-				if (hitTarget != null) {
-					if (!(hitTarget instanceof Player) || QualityArmory.allowGunsInRegion(hitTarget.getLocation())) {
+			if (hitTarget != null) {
+				if (QualityArmory.allowGunsInRegion(hitTarget.getLocation())) {
 
 						boolean headshot = hitBox.allowsHeadshots() && hitBox.intersectsHead(bulletHitLoc, hitTarget);
 						if (headshot) {
@@ -534,8 +534,8 @@ public class GunUtil {
 		boolean regularshoot = true;
 
 		if (g.getChargingHandler() != null) {
-			QAMain.DEBUG("Charging shoot debug: " + g.getName() + " = " + g.getChargingHandler() == null ? "null"
-					: g.getChargingHandler().getName());
+			QAMain.DEBUG("Charging shoot debug: " + g.getName() + " = " + (g.getChargingHandler() == null ? "null"
+					: g.getChargingHandler().getName()));
 			regularshoot = g.getChargingHandler().shoot(g, player, firstGunInstance);
 		}
 
@@ -606,9 +606,9 @@ public class GunUtil {
 							&& (g.getReloadingingHandler() == null || !g.getReloadingingHandler().isReloading(player)))) {
 						regularshoot = g.getChargingHandler().shoot(g, player, temp);
 						QAMain.DEBUG(
-								"Charging (rapidfire) shoot debug: " + g.getName() + " = " + g.getChargingHandler() == null
+								"Charging (rapidfire) shoot debug: " + g.getName() + " = " + (g.getChargingHandler() == null
 										? "null"
-										: g.getChargingHandler().getName());
+										: g.getChargingHandler().getName()));
 					}
 					if (regularshoot) {
 						GunUtil.shootHandler(g, player);

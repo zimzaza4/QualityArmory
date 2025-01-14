@@ -6,6 +6,7 @@ import java.util.List;
 import com.cryptomorin.xseries.particles.XParticle;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
 import me.zombie_striker.customitemmanager.CustomItemManager;
+import me.zombie_striker.qg.api.QAGrenadeExplodeEvent;
 import me.zombie_striker.qg.api.QAThrowableExplodeEvent;
 import me.zombie_striker.qg.hooks.protection.ProtectionHandler;
 import org.bukkit.Bukkit;
@@ -143,14 +144,20 @@ public class Grenade extends CustomBaseObject implements ThrowableItems {
 				}
 				Player thro = Bukkit.getPlayer(h.getOwner());
 				try {
-					for (Entity e : h.getHolder().getNearbyEntities(radius, radius, radius)) {
-						if (e instanceof LivingEntity) {
-							double dam = Math.min(dmageLevel / e.getLocation().distance(h.getHolder().getLocation()), dmageLevel * 20);
-							QAMain.DEBUG("Grenade-Damaging " + e.getName() + " : " + dam + " DAM.");
-							if (thro == null)
-								((LivingEntity) e).damage(dam);
-							else
-								((LivingEntity) e).damage(dam, thro);
+					List<Entity> entities = new ArrayList<>(h.getHolder().getNearbyEntities(radius, radius, radius));
+					QAGrenadeExplodeEvent grenadeExplodeEvent = new QAGrenadeExplodeEvent(h.getHolder().getLocation(), thrower, entities);
+					Bukkit.getPluginManager().callEvent(grenadeExplodeEvent);
+
+					if (!grenadeExplodeEvent.isCancelled()) {
+						for (Entity e : entities) {
+							if (e instanceof LivingEntity) {
+								double dam = Math.min(dmageLevel / e.getLocation().distance(h.getHolder().getLocation()), dmageLevel * 20);
+								QAMain.DEBUG("Grenade-Damaging " + e.getName() + " : " + dam + " DAM.");
+								if (thro == null)
+									((LivingEntity) e).damage(dam);
+								else
+									((LivingEntity) e).damage(dam, thro);
+							}
 						}
 					}
 				} catch (Error e) {
