@@ -70,10 +70,11 @@ public class GunYML extends ArmoryYML {
 							: WeaponSounds.RELOAD_BOLT.getSoundName());
 		}catch (Error|Exception e5){}
 
-		verify("sway.sneakModifier", true);
-		verify("sway.moveModifier", true);
-		verify("sway.runModifier", true);
-		verify("sway.unscopedModifier", 1);
+		verify("sway.sneakModifier", 0.7);
+		verify("sway.moveModifier", 1.5);
+		verify("sway.runModifier", 1.3);
+		verify("sway.aimModifier", 0.2);
+		//verify("sway.unscopedModifier", 1);
 		verify("firing_knockback", 0);
 		verify("KilledByMessage", "%player% was shot by %killer% using a %name%");
 		verify("DestructableMaterials", Collections.singletonList("MATERIAL_NAME_HERE"));

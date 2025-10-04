@@ -61,7 +61,7 @@ public class ArmoryYML {
 	public ArmoryYML verify(String name, Object v) {
 		if (!contains(name)) {
 			fileConfig.set(name, v);
-			saveNow = true;
+			// saveNow = true;
 		}
 		return this;
 	}

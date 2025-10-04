@@ -1,5 +1,6 @@
 package me.zombie_striker.customitemmanager.qa.versions.V1_14;
 
+import com.cryptomorin.xseries.XAttribute;
 import com.cryptomorin.xseries.profiles.builder.XSkull;
 import com.cryptomorin.xseries.profiles.objects.ProfileInputType;
 import com.cryptomorin.xseries.profiles.objects.Profileable;
@@ -98,7 +99,7 @@ public class CustomGunItem extends AbstractCustomGunItem {
 
 			if (overrideAttackSpeed) {
 				AttributeModifier modifier = new AttributeModifier(base.getUuid(), "generic.attackSpeed", 0, AttributeModifier.Operation.ADD_NUMBER);
-				im.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, modifier);
+				im.addAttributeModifier(XAttribute.ATTACK_SPEED.get(), modifier);
 			}
 
 			if (QAMain.ITEM_enableUnbreakable) {

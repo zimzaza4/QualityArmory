@@ -15,7 +15,7 @@ import me.zombie_striker.qg.guns.utils.GunRefillerRunnable;
 import me.zombie_striker.qg.guns.utils.GunUtil;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.guns.utils.WeaponType;
-import me.zombie_striker.qg.handlers.AimManager;
+
 import me.zombie_striker.qg.handlers.IronsightsHandler;
 import me.zombie_striker.qg.handlers.Update19OffhandChecker;
 import me.zombie_striker.qg.utils.LocalUtils;
@@ -71,9 +71,10 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     private double reloadTime = 1.5;
     private ChargingHandler ch = null;
     private ReloadingHandler rh = null;
-    private boolean enableSwayMovementModifier = true;
-    private boolean enableSwaySneakModifier = true;
-    private boolean enableSwayRunModifier = true;
+    private double swayMovementModifier = 1.5;
+    private double swaySneakModifier = 0.7;
+    private double swayAimModifier = 0.2;
+    private double swayRunModifier = 1.3;
     private int maxDistance = 150;
     private Particle particle = null;
     private int particle_data = 1;
@@ -421,6 +422,10 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
         this.recoil = d;
     }
 
+    public void setType(WeaponType type) {
+        this.type = type;
+    }
+
     public void enableBetterAimingAnimations(boolean b) {
         useOffhandOverride = b;
     }
@@ -498,7 +503,17 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public int getZoomWhenIronSights() {
+        if (zoomLevel > 10) {
+            return Math.min(zoomLevel / 2, 10);
+        }
         return zoomLevel;
+    }
+
+    public int getZoomWhenIronSights(Player player) {
+        if (player.isSneaking()) {
+            return getZoomWhenIronSights() * 2;
+        }
+        return getZoomWhenIronSights();
     }
 
     public int getFireRate() {
@@ -630,11 +645,15 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public double getSway(UUID player) {
+        /*
         AtomicInteger counter = AimManager.SHOOT_COUNTER.get(player);
         if (counter == null) {
             return getSway();
         }
         return acc / 100 * (counter.get() * 5);
+
+         */
+        return getSway();
     }
 
     public double getMaxSway() {
@@ -1068,28 +1087,36 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
         return CustomItemManager.getItemType("gun").getItem(this.getItemData().getMat(), this.getItemData().getData(), this.getItemData().getVariant());
     }
 
-    public boolean isEnableSwaySneakModifier() {
-        return enableSwaySneakModifier;
+    public double getSwaySneakModifier() {
+        return swaySneakModifier;
     }
 
-    public void setEnableSwaySneakModifier(boolean enableSwaySneakModifier) {
-        this.enableSwaySneakModifier = enableSwaySneakModifier;
+    public void setSwaySneakModifier(double swaySneakModifier) {
+        this.swaySneakModifier = swaySneakModifier;
     }
 
-    public boolean isEnableSwayMovementModifier() {
-        return enableSwayMovementModifier;
+    public double getSwayMovementModifier() {
+        return swayMovementModifier;
     }
 
-    public void setEnableSwayMovementModifier(boolean enableSwayMovementModifier) {
-        this.enableSwayMovementModifier = enableSwayMovementModifier;
+    public void setSwayMovementModifier(double swayMovementModifier) {
+        this.swayMovementModifier = swayMovementModifier;
     }
 
-    public boolean isEnableSwayRunModifier() {
-        return enableSwayRunModifier;
+    public double getSwayRunModifier() {
+        return swayRunModifier;
     }
 
-    public void setEnableSwayRunModifier(boolean enableSwayRunModifier) {
-        this.enableSwayRunModifier = enableSwayRunModifier;
+    public void setSwayRunModifier(double swayRunModifier) {
+        this.swayRunModifier = swayRunModifier;
+    }
+
+    public double getSwayAimModifier() {
+        return swayAimModifier;
+    }
+
+    public void setSwayAimModifier(double swayAimModifier) {
+        this.swayAimModifier = swayAimModifier;
     }
 
     public void setKnockbackPower(double power) {
@@ -1168,9 +1195,9 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
                 ", reloadTime=" + reloadTime +
                 ", ch=" + ch +
                 ", rh=" + rh +
-                ", enableSwayMovementModifier=" + enableSwayMovementModifier +
-                ", enableSwaySneakModifier=" + enableSwaySneakModifier +
-                ", enableSwayRunModifier=" + enableSwayRunModifier +
+                ", swayMovementModifier=" + swayMovementModifier +
+                ", swaySneakModifier=" + swaySneakModifier +
+                ", swayRunModifier=" + swayRunModifier +
                 ", maxDistance=" + maxDistance +
                 ", particle=" + particle +
                 ", particle_data=" + particle_data +

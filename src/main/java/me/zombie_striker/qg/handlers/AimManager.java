@@ -11,6 +11,7 @@ import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.api.QualityArmory;
 import me.zombie_striker.qg.guns.Gun;
 
+import me.zombie_striker.qg.guns.utils.GunUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -47,7 +48,6 @@ public class AimManager extends BukkitRunnable implements Listener {
 		for (Player p : Bukkit.getOnlinePlayers()) {
 			double sway = 1;
 			Gun g = QualityArmory.getGunInHand(p);
-
 			AtomicInteger counter = SHOOT_COUNTER.get(p.getUniqueId());
 			if (counter != null) {
 				if (counter.get() > 1) {
@@ -55,14 +55,21 @@ public class AimManager extends BukkitRunnable implements Listener {
 				}
 			}
 			if (g!=null) {
-				if (p.isSneaking() && g.isEnableSwaySneakModifier())
-					sway *= QAMain.swayModifier_Sneak;
-				if (p.isSprinting() && g.isEnableSwayRunModifier()) {
-					sway *= QAMain.swayModifier_Run;
+				sway = g.getSway();
+				if (p.isSneaking())
+					sway *= g.getSwaySneakModifier();
+				if (p.isSprinting()) {
+					sway *= g.getSwayRunModifier();
 				}
+				if (IronsightsHandler.isAiming(p)) {
+					sway *= g.getSwayAimModifier();
+				}
+				/*
 				if (XReflection.supports(9) && !QualityArmory.isIronSights(p.getInventory().getItemInMainHand())) {
 					sway *= g.getSwayUnscopedMultiplier();
 				}
+
+				 */
 			}
 
 			if (LAST_MOVEMENT.containsKey(p.getUniqueId())) {
@@ -72,8 +79,8 @@ public class AimManager extends BukkitRunnable implements Listener {
 					s = 1;
 				if (s < 800) {
 					// less than 1.5 sec
-					if (g==null || g.isEnableSwayMovementModifier())
-						sway *= Math.min(QAMain.swayModifier_Walk, 800 / s);
+					if (g!=null)
+						sway *= Math.min(g.getSwayMovementModifier(), 800 / s);
 				}
 			}
 

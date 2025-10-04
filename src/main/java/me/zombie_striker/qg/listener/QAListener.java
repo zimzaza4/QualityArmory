@@ -1,5 +1,6 @@
 package me.zombie_striker.qg.listener;
 
+import com.cryptomorin.xseries.XSound;
 import me.zombie_striker.customitemmanager.ArmoryBaseObject;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
 import me.zombie_striker.customitemmanager.CustomItemManager;
@@ -105,6 +106,18 @@ public class QAListener implements Listener {
 	public void onShift(final PlayerToggleSneakEvent e) {
 		if (e.isCancelled())
 			return;
+
+		if (IronsightsHandler.isAiming(e.getPlayer())) {
+			if (!e.isSneaking()) {
+                if (XSound.ITEM_SPYGLASS_USE.get() != null) {
+                    e.getPlayer().playSound(e.getPlayer().getLocation(), XSound.ITEM_SPYGLASS_USE.get(), 1, 1);
+				}
+            } else {
+				if (XSound.ITEM_SPYGLASS_STOP_USING.get() != null) {
+					e.getPlayer().playSound(e.getPlayer().getLocation(), XSound.ITEM_SPYGLASS_STOP_USING.get(), 1, 1);
+				}
+			}
+		}
 
 		if (QualityArmory.isCustomItem(e.getPlayer().getItemInHand())) {
 			CustomBaseObject base = QualityArmory.getCustomItem(e.getPlayer().getItemInHand());
@@ -965,7 +978,7 @@ public class QAListener implements Listener {
 			}
 		}
 		QAMain.reloadingTasks.remove(e.getPlayer().getUniqueId());
-
+		PacketEventsHandler.zoomData.remove(e.getPlayer());
 		if (QualityArmory.isIronSights(e.getPlayer().getInventory().getItemInHand())) {
 			try {
 				e.getPlayer().getInventory().setItemInMainHand(e.getPlayer().getInventory().getItemInOffHand());

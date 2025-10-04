@@ -347,11 +347,13 @@ public class GunYMLLoader {
 			g.enableBetterAimingAnimations(f2.getBoolean("enableBetterModelScopes"));
 
 		if (f2.contains("sway.sneakModifier"))
-			g.setEnableSwaySneakModifier(f2.getBoolean("sway.sneakModifier"));
+			g.setSwaySneakModifier(f2.getDouble("sway.sneakModifier"));
 		if (f2.contains("sway.moveModifier"))
-			g.setEnableSwayMovementModifier(f2.getBoolean("sway.moveModifier"));
+			g.setSwayMovementModifier(f2.getDouble("sway.moveModifier"));
 		if (f2.contains("sway.runModifier"))
-			g.setEnableSwayRunModifier(f2.getBoolean("sway.runModifier"));
+			g.setSwayRunModifier(f2.getDouble("sway.runModifier"));
+		if (f2.contains("sway.aimModifier"))
+			g.setSwayRunModifier(f2.getDouble("sway.aimModifier"));
 		if (f2.contains("DestructableMaterials")) {
 			g.getBreakableMaterials().clear();
 			g.getBreakableMaterials().addAll(getMaterials(f2.getStringList("DestructableMaterials")));
@@ -423,6 +425,8 @@ public class GunYMLLoader {
 
 		if (f2.contains("recoil"))
 			g.setRecoil(f2.getDouble("recoil"));
+		if (f2.contains("weapontype"))
+			g.setType(WeaponType.valueOf(f2.getString("weapontype", "RIFLE")));
 		if (f2.contains("headshotMultiplier"))
 			g.setHeadshotMultiplier(f2.getDouble("headshotMultiplier"));
 		if (f2.contains("unlimitedAmmo"))

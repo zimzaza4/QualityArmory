@@ -1,10 +1,16 @@
 package me.zombie_striker.qg.miscitems;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
+import com.cryptomorin.xseries.particles.ParticleDisplay;
 import com.cryptomorin.xseries.particles.XParticle;
 import me.zombie_striker.qg.hooks.protection.ProtectionHandler;
+import org.bukkit.Bukkit;
 import org.bukkit.Effect;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -18,6 +24,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.customitemmanager.MaterialStorage;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
+import org.bukkit.util.Vector;
 
 public class SmokeGrenades extends Grenade {
 
@@ -38,26 +45,33 @@ public class SmokeGrenades extends Grenade {
 		final ThrowableHolder h = new ThrowableHolder(thrower.getUniqueId(), thrower, this);
 		h.setTimer(new BukkitRunnable() {
 
-			int k = 0;
 
+			int k = 0;
 			@Override
 			public void run() {
-				try {
-					h.getHolder().getWorld().spawnParticle(XParticle.EXPLOSION_EMITTER.get(),
-							h.getHolder().getLocation(), 0);
-					if (k % 2 == 0)
-						h.getHolder().getWorld().playSound(h.getHolder().getLocation(),
-								WeaponSounds.HISS.getSoundName(), 2f, 1f);
-				} catch (Error e3) {
-					h.getHolder().getWorld().playEffect(h.getHolder().getLocation(), Effect.valueOf("CLOUD"), 0);
-					h.getHolder().getWorld().playSound(h.getHolder().getLocation(), Sound.valueOf("EXPLODE"), 3, 0.7f);
-				}
 				k++;
+				Bukkit.getScheduler().runTaskAsynchronously(QAMain.getInstance(), () -> {
+					Set<Location> locations = selectLocations(h.getHolder().getLocation(), 4);
+
+					for (Location selectLocation : locations) {
+						selectLocation = selectLocation.clone();
+						if (XParticle.CAMPFIRE_COSY_SMOKE.get() != null) {
+
+							ParticleDisplay.of(XParticle.CAMPFIRE_SIGNAL_SMOKE)
+									.offset(0.5, 0.5, 0.5)
+									.particleDirection(new Vector(0, 0, 0))
+									.withLocation(selectLocation)
+									.spawn();
+						} else {
+							selectLocation.getWorld().spawnParticle(XParticle.SMOKE.get(), selectLocation, 0);
+						}
+					}
+				});
 				if (k == 1) {
 					if (h.getHolder() instanceof Player) {
 						QAMain.DEBUG("Blinded player");
-						((LivingEntity) h.getHolder())
-								.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 2));
+						// ((LivingEntity) h.getHolder())
+						//		.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 2));
 						removeGrenade(((Player) h.getHolder()));
 					}
 				} else if (k == 80) {
@@ -68,17 +82,20 @@ public class SmokeGrenades extends Grenade {
 					throwItems.remove(h.getHolder());
 					this.cancel();
 				} else {
+					/*
 					for(Entity e : h.getHolder().getNearbyEntities(radius, radius, radius))
 						if(e instanceof LivingEntity) {
 							QAMain.DEBUG("Blinding to "+e.getName());
 							try {
 								if (ProtectionHandler.canPvp(e.getLocation())) {
-									((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 2));
+									//((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 2));
 								}
 							}catch (Error error){
-								((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 2));
+								//((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 2));
 							}
 						}
+
+					 */
 				}
 			}
 		}.runTaskTimer(QAMain.getInstance(), 5 * 20, 5));
@@ -87,4 +104,22 @@ public class SmokeGrenades extends Grenade {
 
 	}
 
+	public static Set<Location> selectLocations(Location location, int radius) {
+		Set<Location> locations = new HashSet<>();
+		int bx = location.getBlockX();
+        int by = location.getBlockY();
+        int bz = location.getBlockZ();
+
+        for (int x = bx - radius; x <= bx + radius; x++) {
+            for (int y = by - radius; y <= by + radius; y++) {
+                for (int z = bz - radius; z <= bz + radius; z++) {
+                    double distance = ((bx - x) * (bx - x) + (bz - z) * (bz - z) + (by - y) * (by - y));
+                    if (distance < radius * radius && (distance < (radius - 1) * (radius - 1))) {
+                        locations.add(new Location(location.getWorld(), x, y, z));
+                    }
+                }
+            }
+        }
+		return locations;
+	}
 }

@@ -2,6 +2,7 @@ package me.zombie_striker.qg.armor;
 
 import java.util.List;
 
+import com.cryptomorin.xseries.XAttribute;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
 import me.zombie_striker.customitemmanager.CustomItemManager;
 import org.bukkit.Sound;
@@ -107,7 +108,7 @@ public class ArmorObject extends CustomBaseObject implements ArmoryBaseObject {
 		ItemStack item = CustomItemManager.getItemType("gun").getItem(this.getItemData().getMat(),this.getItemData().getData(),this.getItemData().getVariant());
 		ItemMeta itemMeta = item.getItemMeta();
 		if (itemMeta != null && protection != 0) {
-			itemMeta.addAttributeModifier(Attribute.GENERIC_ARMOR, new AttributeModifier("generic.armor", protection, AttributeModifier.Operation.ADD_NUMBER));
+			itemMeta.addAttributeModifier(XAttribute.ARMOR.get(), new AttributeModifier("generic.armor", protection, AttributeModifier.Operation.ADD_NUMBER));
 			item.setItemMeta(itemMeta);
 		}
 

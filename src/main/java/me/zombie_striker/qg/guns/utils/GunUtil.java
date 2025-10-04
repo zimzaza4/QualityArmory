@@ -4,6 +4,11 @@ import com.alessiodp.parties.api.Parties;
 import com.alessiodp.parties.api.interfaces.PartiesAPI;
 import com.alessiodp.parties.api.interfaces.Party;
 import com.alessiodp.parties.api.interfaces.PartyPlayer;
+import com.cryptomorin.xseries.XAttribute;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.viaversion.viaversion.api.ViaAPI;
+import io.papermc.paper.entity.TeleportFlag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
@@ -36,6 +41,7 @@ import ru.beykerykt.minecraft.lightapi.common.LightAPI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GunUtil {
@@ -44,6 +50,9 @@ public class GunUtil {
 	public static HashMap<UUID, Double> highRecoilCounter = new HashMap<>();
 	protected static HashMap<UUID, Location> AF_locs = new HashMap<>();
 	protected static HashMap<UUID, BukkitTask> AF_tasks = new HashMap<>();
+
+	public static Cache<Player, Integer> offsetCache = CacheBuilder.newBuilder()
+			.expireAfterWrite(610, TimeUnit.MILLISECONDS).build();
 
 	public static void shootHandler(Gun g, Player p) {
 		shootHandler(g, p, g.getBulletsPerShot());
@@ -68,8 +77,8 @@ public class GunUtil {
 		if (g.usesCustomProjctiles()) {
 			for (int i = 0; i < numberOfBullets; i++) {
 				Vector go = p.getLocation().getDirection().normalize();
-				go.add(new Vector((Math.random() * 2 * sway) - sway, (Math.random() * 2 * sway) - sway,
-						(Math.random() * 2 * sway) - sway)).normalize();
+				go.add(new Vector(0.1 * ((Math.random() * 2 * sway) - sway), (Math.random() * 2 * sway) - sway,
+						0.1 * ((Math.random() * 2 * sway) - sway))).normalize();
 				Vector two = go.clone();// .multiply();
 				g.getCustomProjectile().spawn(g, p.getEyeLocation(), p, two);
 			}
@@ -98,22 +107,50 @@ public class GunUtil {
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void shootInstantVector(Gun g, Player p, double sway, double damage, int shots, int range) {
+	public static void shootInstantVector(Gun g, Player p, double sway, double baseDamage, int shots, int range) {
+		if (shots <= 1 && g.getWeaponType() != WeaponType.SNIPER) {
+			sway = sway * 1.7;
+		}
+
+		QAMain.DEBUG("W Type: " + g.getWeaponType());
 		boolean timingsReport = false;
 		long time1 = System.currentTimeMillis();
 		long time2 = 0;
 		long time3 = 0;
 		long time4point5 = 0;
 		long time4 = 0;
+
+		Integer level = offsetCache.getIfPresent(p);
+		if (level == null) {
+			level = 1;
+			offsetCache.put(p, 2);
+		} else {
+			offsetCache.put(p, level + 1);
+		}
+
 		for (int i = 0; i < shots; i++) {
+			double damage = baseDamage;
 			Location start = p.getEyeLocation().clone();
 
 			start.add(p.getVelocity());
 
+			QAMain.DEBUG("R OFFSET LEVEL:" + level);
 
 			Vector normalizedDirection = p.getLocation().getDirection().normalize();
-			normalizedDirection.add(new Vector((Math.random() * 2 * sway) - sway, (Math.random() * 2 * sway) - sway,
-					(Math.random() * 2 * sway) - sway));
+			if (shots > 1) {
+				normalizedDirection.add(new Vector(((Math.random() * 2 * sway) - sway), (Math.random() * 2 * sway) - sway,
+						((Math.random() * 2 * sway) - sway)));
+			} else {
+				double m = Math.min(sway, sway * (level / 12d));
+				if (level < 4) {
+					m = 0.01;
+				}
+				if (g.getWeaponType() == WeaponType.SNIPER) {
+					m = 1;
+				}
+				normalizedDirection.add(new Vector(m * ((Math.random() * 2 * sway) - sway), 0.05 * ((Math.random() * 2 * sway) - sway),
+						m * ((Math.random() * 2 * sway) - sway)));
+			}
 			normalizedDirection = normalizedDirection.normalize();
 			Vector step = normalizedDirection.clone().multiply(QAMain.bulletStep);
 
@@ -122,6 +159,7 @@ public class GunUtil {
 
 			// Location bulletHitLoc = null;
 			List<HitResult> results = new ArrayList<>();
+
 
 			double maxDistance = getTargetedSolidMaxDistance(step, start, range);
 			double maxEntityDistance = maxDistance;
@@ -132,8 +170,22 @@ public class GunUtil {
 
 			Location centerTest = start.clone().add(normalizedDirection.clone().multiply(maxDistance / 2));
 
-			for (Entity e : centerTest.getWorld().getNearbyEntities(centerTest, maxDistance / 2, maxDistance / 2,
-					maxDistance / 2)) {
+			List<Entity> entities = new ArrayList<>(centerTest.getWorld().getNearbyEntities(centerTest, maxDistance / 2 + 1, maxDistance / 2 + 1, maxDistance / 2));
+
+			entities.sort((u1, u2) -> {
+				double d1 = u1.getLocation().distanceSquared(p.getLocation());
+				double d2 = u2.getLocation().distanceSquared(p.getLocation());
+				double diff = d1 - d2;
+				if (diff > 0) {
+					return 1;
+				} else if (diff < 0) {
+					return -1;
+				}
+				return 0;
+			});
+
+			main:
+			for (Entity e : entities) {
 				if (e instanceof Damageable) {
 					if (QAMain.avoidTypes.contains(e.getType()))
 						continue;
@@ -185,6 +237,17 @@ public class GunUtil {
 								HitResult result = new HitResult(e, box, bulletLocationTest);
 								results.add(result);
 								//headShot = box.allowsHeadshots() ? box.intersectsHead(bulletLocationTest, e) : false;
+
+								if (!QAMain.piercing) {
+									break main;
+								}
+
+								for (HitResult hitResult : results) {
+									if (hitResult.hitTarget == e) {
+										continue main;
+									}
+								}
+
 								if (g.getWeaponType() == WeaponType.RPG) {
 									break;
 								}
@@ -199,6 +262,8 @@ public class GunUtil {
 			if (results.isEmpty()) {
 				results.add(new HitResult(null, null, null));
 			}
+
+
 			for (HitResult result : results) {
 
 				Entity hitTarget = result.hitTarget;
@@ -206,8 +271,8 @@ public class GunUtil {
 				Location bulletHitLoc = result.bulletHitLoc;
 				boolean isLast = (i2 == results.size());
 
-			if (hitTarget != null) {
-				if (QualityArmory.allowGunsInRegion(hitTarget.getLocation())) {
+				if (hitTarget != null) {
+					if (QualityArmory.allowGunsInRegion(hitTarget.getLocation())) {
 
 						boolean headshot = hitBox.allowsHeadshots() && hitBox.intersectsHead(bulletHitLoc, hitTarget);
 						if (headshot) {
@@ -263,8 +328,8 @@ public class GunUtil {
 												player.getInventory().getChestplate(), player.getInventory().getLeggings(),
 												player.getInventory().getBoots()}) {
 											if (is != null) {
-												Collection<AttributeModifier> attributes = is.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ARMOR);
-												Collection<AttributeModifier> toughnessAttributes = is.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ARMOR_TOUGHNESS);
+												Collection<AttributeModifier> attributes = is.getItemMeta().getAttributeModifiers(XAttribute.ARMOR.get());
+												Collection<AttributeModifier> toughnessAttributes = is.getItemMeta().getAttributeModifiers(XAttribute.ARMOR_TOUGHNESS.get());
 
 												if (attributes != null && !attributes.isEmpty())
 													for (AttributeModifier a : attributes)
@@ -497,6 +562,10 @@ public class GunUtil {
 				}
 			}
 		}
+
+		if (g.getRecoil() > 0) {
+			GunUtil.addRecoil(p, g);
+		}
 	}
 
 	public static void basicShoot(boolean offhand, Gun g, Player player, double acc) {
@@ -714,7 +783,7 @@ public class GunUtil {
 					} else {
 						soundname = g.getWeaponSound();
 					}
-					player.getWorld().playSound(player.getLocation(), soundname, (float) g.getVolume(), 1);
+					player.getWorld().playSound(player.getLocation(), soundname, (float) g.getVolume() * 0.35f, 1);
 					if (!QAMain.isVersionHigherThan(1, 9)) {
 						try {
 							player.getWorld().playSound(player.getLocation(), Sound.valueOf("CLICK"), 5, 1);
@@ -807,8 +876,8 @@ public class GunUtil {
 					public void run() {
 						if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player)) {
 							addRecoilWithBedrock(player, g, false);
-						} else if (QAMain.hasProtocolLib && QAMain.isVersionHigherThan(1, 13) && !QAMain.hasViaVersion) {
-							addRecoilWithVector(player, g, true);
+						} else if (QAMain.hasPacketEvents && QAMain.isVersionHigherThan(1, 13) && !QAMain.hasViaVersion) {
+								PacketEventsHandler.addRecoilWithPaperTeleport(player, g, true);
 						} else
 							addRecoilWithTeleport(player, g, true);
 					}
@@ -817,13 +886,14 @@ public class GunUtil {
 		} else {
 			if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(player)) {
 				addRecoilWithBedrock(player, g, true);
-			} else if (QAMain.hasProtocolLib && QAMain.isVersionHigherThan(1, 13)) {
-				addRecoilWithVector(player, g, false);
+			} else if (QAMain.hasPacketEvents && QAMain.isVersionHigherThan(1, 13)) {
+				PacketEventsHandler.addRecoilWithPaperTeleport(player, g, false);
 			} else
 				addRecoilWithTeleport(player, g, false);
 		}
 	}
 
+	/*
 	private static void addRecoilWithProtocolLib(Player player, Gun g, boolean useHighRecoil) {
 		Vector newDir = player.getLocation().getDirection();
 		newDir.normalize()
@@ -834,7 +904,7 @@ public class GunUtil {
 			highRecoilCounter.remove(player.getUniqueId());
 		ProtocolLibHandler.sendYawChange(player, newDir);
 	}
-
+	 */
 	private static void addRecoilWithBedrock(Player player, Gun g, boolean useHighRecoil) {
 		float recoil = (float) (g.getRecoil() * 0.06);
 		CompletableFuture.runAsync(() -> GeyserHandler.shakeCamera(player, recoil, 0.1F, 1));
@@ -842,14 +912,13 @@ public class GunUtil {
 
 	private static void addRecoilWithVector(Player player, Gun g, boolean useHighRecoil) {
 		Vector vector = player.getLocation().getDirection().multiply(-g.getRecoil() * (player.isSneaking() ? 0.02 : 0.03));
-		vector.setY(player.isSneaking() ? -0.03 : -0.06);
+		vector.setY(-0.1);
 		Vector push = player.getVelocity().add(vector);
-		if (player.getVelocity().getY() > 0) {
-			push.setY(-0.03);
-		}
 		player.setVelocity(push);
 
 	}
+
+
 
 	private static void addRecoilWithTeleport(Player player, Gun g, boolean useHighRecoil) {
 		Location tempCur = (QAMain.recoilHelperMovedLocation.get(player.getUniqueId()));

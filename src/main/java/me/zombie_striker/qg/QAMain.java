@@ -4,6 +4,7 @@ import com.cryptomorin.xseries.XPotion;
 import com.cryptomorin.xseries.reflection.XReflection;
 
 
+import com.github.retrooper.packetevents.PacketEvents;
 import de.tr7zw.changeme.nbtapi.NBT;
 import de.tr7zw.changeme.nbtapi.utils.MinecraftVersion;
 import me.zombie_striker.customitemmanager.CustomBaseObject;
@@ -34,9 +35,7 @@ import me.zombie_striker.qg.guns.utils.GunRefillerRunnable;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.handlers.*;
 import me.zombie_striker.qg.hooks.MimicHookHandler;
-import me.zombie_striker.qg.hooks.MimicHookImpl;
 import me.zombie_striker.qg.hooks.PlaceholderAPIHook;
-import me.zombie_striker.qg.hooks.QuickShopHook;
 import me.zombie_striker.qg.hooks.anticheat.AntiCheatHook;
 import me.zombie_striker.qg.hooks.anticheat.MatrixHook;
 import me.zombie_striker.qg.hooks.anticheat.VulcanHook;
@@ -46,7 +45,6 @@ import me.zombie_striker.qg.miscitems.ThrowableItems;
 import me.zombie_striker.qg.miscitems.ThrowableItems.ThrowableHolder;
 import me.zombie_striker.qg.npcs.Gunner;
 import me.zombie_striker.qg.npcs.GunnerTrait;
-import me.zombie_striker.qg.npcs_sentinel.SentinelQAHandler;
 import me.zombie_striker.qg.utils.LocalUtils;
 import org.bukkit.*;
 import org.bukkit.command.BlockCommandSender;
@@ -72,6 +70,7 @@ import org.bukkit.scoreboard.Team;
 import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -238,7 +237,7 @@ public class QAMain extends JavaPlugin {
     public static String language = "en";
     public static boolean hasParties = false;
     public static boolean friendlyFire = false;
-    public static boolean hasProtocolLib = false;
+    public static boolean hasPacketEvents = false;
     public static boolean hasViaVersion = false;
     public static boolean hasViaRewind = false;
     public static boolean hasGeyser = false;
@@ -257,6 +256,7 @@ public class QAMain extends JavaPlugin {
     public static List<Scoreboard> coloredGunScoreboard = new ArrayList<Scoreboard>();
     public static boolean blockBreakTexture = false;
     public static boolean autoarm = false;
+    public static boolean piercing = false;
     public static List<UUID> currentlyScoping = new ArrayList<>();
     private static QAMain main;
 
@@ -277,6 +277,7 @@ public class QAMain extends JavaPlugin {
         if (add) {
             if (g.getZoomWhenIronSights() > 0) {
                 currentlyScoping.add(player.getUniqueId());
+                // PacketEventsHandler.setZoom(player, PacketEventsHandler.getScope(g.getZoomWhenIronSights(player)));
                 player.addPotionEffect(new PotionEffect(XPotion.SLOWNESS.getPotionEffectType(), 1200, g.getZoomWhenIronSights()));
             }
             if (g.hasnightVision()) {
@@ -285,8 +286,11 @@ public class QAMain extends JavaPlugin {
             }
         } else {
             if (currentlyScoping.contains(player.getUniqueId())) {
+
                 if (player.hasPotionEffect(XPotion.SLOWNESS.getPotionEffectType()) && (g == null || g.getZoomWhenIronSights() > 0))
                     player.removePotionEffect(XPotion.SLOWNESS.getPotionEffectType());
+
+                // PacketEventsHandler.resetZoom(player);
                 boolean potionEff = false;
                 try {
                     potionEff = player.hasPotionEffect(PotionEffectType.NIGHT_VISION)
@@ -302,7 +306,6 @@ public class QAMain extends JavaPlugin {
                 currentlyScoping.remove(player.getUniqueId());
             }
         }
-
     }
 
     public static void DEBUG(String message) {
@@ -664,10 +667,6 @@ public class QAMain extends JavaPlugin {
         AntiCheatHook.registerHook("Matrix", MatrixHook.class);
         AntiCheatHook.registerHook("Vulcan", VulcanHook.class);
 
-        if (Bukkit.getPluginManager().isPluginEnabled("QuickShop")) {
-            Bukkit.getPluginManager().registerEvents(new QuickShopHook(), this);
-            this.getLogger().info("Found QuickShop. Loaded support");
-        }
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new PlaceholderAPIHook().register();
@@ -714,6 +713,22 @@ public class QAMain extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new QAListener(), this);
         Bukkit.getPluginManager().registerEvents(new AimManager(), this);
+     /*
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    Gun g = QualityArmory.getGunInHand(p);
+                    if (g!=null) {
+                        if (IronsightsHandler.isAiming(p)) {
+                            PacketEventsHandler.setZoom(p, PacketEventsHandler.getScope(g.getZoomWhenIronSights(p)));
+                        }
+                    }
+                }
+            }
+        }.runTaskTimerAsynchronously(QAMain.getInstance(), 1, 1);
+
+      */
         try {
             if (Bukkit.getPluginManager().isPluginEnabled("ChestShop"))
                 Bukkit.getPluginManager().registerEvents(new ChestShopHandler(), this);
@@ -946,10 +961,9 @@ public class QAMain extends JavaPlugin {
             hasViaRewind = true;
         if (Bukkit.getPluginManager().isPluginEnabled("ViaVersion"))
             hasViaVersion = true;
-        if (getServer().getPluginManager().isPluginEnabled("ProtocolLib")) {
-            hasProtocolLib = true;
-            ProtocolLibHandler.initRemoveArmswing();
-            ProtocolLibHandler.initAimBow();
+        if (getServer().getPluginManager().isPluginEnabled("PacketEvents")) {
+            hasPacketEvents = true;
+            PacketEventsHandler.init();
         }
         if (Bukkit.getPluginManager().isPluginEnabled("GeyserUtils")) {
             hasGeyser = true;
@@ -957,11 +971,7 @@ public class QAMain extends JavaPlugin {
             Bukkit.getPluginManager().registerEvents(new GeyserHandler(), this);
         }
 
-        if (getServer().getPluginManager().isPluginEnabled("Sentinel"))
-            try {
-                org.mcmonkey.sentinel.SentinelPlugin.integrations.add(new SentinelQAHandler());
-            } catch (Error | Exception e4) {
-            }
+
 
 
         friendlyFire = (boolean) a("FriendlyFireEnabled", false);
@@ -1043,7 +1053,7 @@ public class QAMain extends JavaPlugin {
         headshotGoreSounds = (boolean) a("Enable_Headshot_Sounds", headshotGoreSounds);
 
         autoarm = (boolean) a("Enable_AutoArm_Grenades", autoarm);
-
+        piercing = (boolean) a("Enable_Piercing", piercing);
         // ignoreArmorStands = (boolean) a("ignoreArmorStands", false);
 
         gravity = (double) a("gravityConstantForDropoffCalculations", gravity);
