@@ -230,6 +230,8 @@ public class QAMain extends JavaPlugin {
     public static String bagAmmo = "&aAmmo: ";
     public static String bagAmmoType = "&aAmmo Type: ";
 
+    public static List<String> gunLore = new ArrayList<>();
+
     public static ItemStack prevButton;
     public static ItemStack nextButton;
     public static MessagesYML m;
@@ -277,20 +279,21 @@ public class QAMain extends JavaPlugin {
         if (add) {
             if (g.getZoomWhenIronSights() > 0) {
                 currentlyScoping.add(player.getUniqueId());
-                // PacketEventsHandler.setZoom(player, PacketEventsHandler.getScope(g.getZoomWhenIronSights(player)));
-                player.addPotionEffect(new PotionEffect(XPotion.SLOWNESS.getPotionEffectType(), 1200, g.getZoomWhenIronSights()));
+                PacketEventsHandler.setZoom(player, PacketEventsHandler.getScope(g.getZoomWhenIronSights(player)));
+                // player.addPotionEffect(new PotionEffect(XPotion.SLOWNESS.getPotionEffectType(), 1200, g.getZoomWhenIronSights()));
             }
             if (g.hasnightVision()) {
                 currentlyScoping.add(player.getUniqueId());
-                player.addPotionEffect(new PotionEffect(XPotion.NIGHT_VISION.getPotionEffectType(), 1200, 3));
+                // player.addPotionEffect(new PotionEffect(XPotion.NIGHT_VISION.getPotionEffectType(), 1200, 3));
             }
         } else {
             if (currentlyScoping.contains(player.getUniqueId())) {
-
+                /*
                 if (player.hasPotionEffect(XPotion.SLOWNESS.getPotionEffectType()) && (g == null || g.getZoomWhenIronSights() > 0))
                     player.removePotionEffect(XPotion.SLOWNESS.getPotionEffectType());
 
-                // PacketEventsHandler.resetZoom(player);
+                 */
+                PacketEventsHandler.resetZoom(player);
                 boolean potionEff = false;
                 try {
                     potionEff = player.hasPotionEffect(PotionEffectType.NIGHT_VISION)
@@ -713,7 +716,7 @@ public class QAMain extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new QAListener(), this);
         Bukkit.getPluginManager().registerEvents(new AimManager(), this);
-     /*
+
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -728,7 +731,7 @@ public class QAMain extends JavaPlugin {
             }
         }.runTaskTimerAsynchronously(QAMain.getInstance(), 1, 1);
 
-      */
+
         try {
             if (Bukkit.getPluginManager().isPluginEnabled("ChestShop"))
                 Bukkit.getPluginManager().registerEvents(new ChestShopHandler(), this);
@@ -1046,6 +1049,8 @@ public class QAMain extends JavaPlugin {
 
         ENABLE_LORE_INFO = (boolean) a("enable_lore_gun-info_messages", true);
         ENABLE_LORE_HELP = (boolean) a("enable_lore_control-help_messages", true);
+
+        gunLore = (List<String>) a("gun_lore", new ArrayList<>());
 
         HeadshotOneHit = (boolean) a("Enable_Headshot_Instantkill", HeadshotOneHit);
         headshotPling = (boolean) a("Enable_Headshot_Notification_Sound", headshotPling);
@@ -1816,5 +1821,9 @@ public class QAMain extends JavaPlugin {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void schedule(Runnable runnable, long delay) {
+        Bukkit.getScheduler().runTaskLater(QAMain.getInstance(), runnable, delay);
     }
 }

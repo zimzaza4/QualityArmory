@@ -249,6 +249,17 @@ public class QAListener implements Listener {
 	public void oninvClick(final InventoryClickEvent e) {
 		if (e.isCancelled())
 			return;
+        if (QAMain.reloadingTasks.containsKey(e.getWhoClicked().getUniqueId())) {
+            for (GunRefillerRunnable r : QAMain.reloadingTasks.get(e.getWhoClicked().getUniqueId())) {
+                r.getTask().cancel();
+            }
+        }
+        if (e.getWhoClicked() instanceof Player player) {
+            if (IronsightsHandler.isAiming(player)) {
+                e.setCancelled(true);
+                return;
+            }
+        }
 		String name = null;
 
 		if(e.getClickedInventory() instanceof PlayerInventory) {
@@ -585,11 +596,29 @@ public class QAListener implements Listener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onDropReload(PlayerDropItemEvent e) {
-		if (QAMain.reloadOnQ && !QAMain.reloadOnFOnly) {
+        if (QualityArmory.isIronSights(e.getItemDrop().getItemStack())) {
+            e.setCancelled(true);
+            return;
+        }
+
+        if (QAMain.reloadingTasks.containsKey(e.getPlayer().getUniqueId())) {
+            if (!QAMain.reloadingTasks.get(e.getPlayer().getUniqueId()).isEmpty()) {
+                e.setCancelled(true);
+            }
+        }
+
+        if (QualityArmory.isGun(e.getPlayer().getInventory().getItemInOffHand())) {
+            e.setCancelled(true);
+            return;
+        }
+
+        if (QAMain.reloadOnQ && !QAMain.reloadOnFOnly) {
 			Gun g = QualityArmory.getGun(e.getItemDrop().getItemStack());
 			if (g != null) {
 				e.setCancelled(true);
-				reload(e.getPlayer(),g);
+                QAMain.DEBUG("RELOAD");
+                QAMain.schedule(() -> reload(e.getPlayer(),g), 1);
+
 			}
 		}
 	}
@@ -629,6 +658,9 @@ public class QAListener implements Listener {
 				}
 			}
 		}
+        if (IronsightsHandler.isAiming(e.getPlayer())) {
+            IronsightsHandler.unAim(e.getPlayer());
+        }
 	}
 
 
@@ -916,6 +948,7 @@ public class QAListener implements Listener {
 			CustomBaseObject qaItem = QualityArmory.getCustomItem(usedItem);
 			if (qaItem != null) {
 				QAMain.DEBUG(qaItem.getName() + " item is being used!");
+                QAMain.DEBUG("ACTION:" + e.getAction());
 				if (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) {
 					if (((ArmoryBaseObject) qaItem).onLMB(e.getPlayer(), usedItem))
 						e.setCancelled(true);
@@ -938,7 +971,6 @@ public class QAListener implements Listener {
 
 			e.getPlayer().getInventory().setItem(e.getPreviousSlot(), e.getPlayer().getInventory().getItemInOffHand());
 			e.getPlayer().getInventory().setItemInOffHand(null);
-
 			Gun.updateAmmo(null, e.getPlayer().getInventory().getItem(e.getPreviousSlot()), ammoCount);
 		}
 		if (QualityArmory.isCustomItem(prev)) {
@@ -1032,6 +1064,9 @@ public class QAListener implements Listener {
 				}
 			}
 		}
+        if (IronsightsHandler.isAiming(e.getPlayer())) {
+            IronsightsHandler.unAim(e.getPlayer());
+        }
 	}
 
 	@SuppressWarnings("deprecation")

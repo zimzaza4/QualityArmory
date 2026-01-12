@@ -58,7 +58,7 @@ public class CustomGunItem extends AbstractCustomGunItem {
 			List<String> lore = base.getCustomLore()!=null?new ArrayList<>(base.getCustomLore()):new ArrayList<>();
 
 			if(base instanceof Gun)
-				lore.addAll(Gun.getGunLore((Gun) base, null, ((Gun) base).getMaxBullets()));
+				lore.addAll(Gun.getGunLore((Gun) base, is, ((Gun) base).getMaxBullets()));
 			if (base instanceof ArmorObject)
 				lore.addAll(OLD_ItemFact.getArmorLore((ArmorObject) base));
 
@@ -75,7 +75,7 @@ public class CustomGunItem extends AbstractCustomGunItem {
 					im.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_UNBREAKABLE);
 				}
 				im.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES);
-				im.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_DESTROYS);
+                // im.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_DESTROYS);
 			} catch (Error e) {
 
 			}

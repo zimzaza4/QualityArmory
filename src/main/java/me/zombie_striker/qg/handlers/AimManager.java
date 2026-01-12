@@ -30,7 +30,7 @@ public class AimManager extends BukkitRunnable implements Listener {
 	public static double getSway(Gun gun,UUID uuid) {
 		if(!SWAYS.containsKey(uuid))
 			return gun.getSway(uuid)*gun.getMovementMultiplier();
-		return gun.getSway(uuid)*Math.pow(SWAYS.get(uuid),gun.getMovementMultiplier());
+		return gun.getSway(uuid) * SWAYS.get(uuid);
 	}
 
 	public static double getBigSway(Gun gun,UUID uuid) {
@@ -55,9 +55,9 @@ public class AimManager extends BukkitRunnable implements Listener {
 				}
 			}
 			if (g!=null) {
-				sway = g.getSway();
-				if (p.isSneaking())
-					sway *= g.getSwaySneakModifier();
+				if (p.isSneaking()) {
+                    sway *= g.getSwaySneakModifier();
+                }
 				if (p.isSprinting()) {
 					sway *= g.getSwayRunModifier();
 				}
@@ -77,21 +77,19 @@ public class AimManager extends BukkitRunnable implements Listener {
 						- LAST_MOVEMENT.get(p.getUniqueId());
 				if (s <= 0)
 					s = 1;
-				if (s < 800) {
-					// less than 1.5 sec
-					if (g!=null)
-						sway *= Math.min(g.getSwayMovementModifier(), 800 / s);
+				if (s < 100) {
+					if (g!=null) {
+                        sway *= g.getSwayMovementModifier();
+                    }
 				}
 			}
-
 			SWAYS.put(p.getUniqueId(), sway);
 		}
 	}
 
 	@EventHandler
 	public void onMove(@NotNull PlayerMoveEvent e) {
-		if (e.getTo() != null && e.getTo().getX() != e.getFrom().getX()
-				|| e.getTo().getZ() != e.getFrom().getZ()) {
+		if (e.getTo().getX() != e.getFrom().getX() || e.getTo().getZ() != e.getFrom().getZ()) {
 			LAST_MOVEMENT.put(e.getPlayer().getUniqueId(),
 					System.currentTimeMillis());
 		}
@@ -99,6 +97,7 @@ public class AimManager extends BukkitRunnable implements Listener {
 
 	@EventHandler
 	public void onQuit(@NotNull PlayerQuitEvent e) {
+        IronsightsHandler.unAim(e.getPlayer());
 		SHOOT_COUNTER.remove(e.getPlayer().getUniqueId());
 		LAST_MOVEMENT.remove(e.getPlayer().getUniqueId());
 		SWAYS.remove(e.getPlayer().getUniqueId());

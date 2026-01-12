@@ -4,6 +4,7 @@ import me.zombie_striker.qg.QAMain;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.type.Slab;
 
 import java.util.HashMap;
 
@@ -32,10 +33,10 @@ public class BlockCollisionUtil {
 
 	public static double getHeight(Block b){
 		Material type = b.getType();
-		if (b.getType().name().contains("SLAB") || b.getType().name().contains("STEP")) {
-			if (b.getData() == 0)
+		if (b.getBlockData() instanceof Slab slab) {
+			if (slab.getType() == Slab.Type.BOTTOM)
 				return 0.5;
-			if (b.getData() == 1)
+			if (slab.getType() == Slab.Type.TOP || slab.getType() == Slab.Type.DOUBLE)
 				return 1;
 		}
 		if(customBlockHeights.containsKey(type))
@@ -69,9 +70,9 @@ public class BlockCollisionUtil {
 			if (QAMain.blockbullet_leaves)
 				return true;
 		}
-		if (b.getType().name().contains("SLAB") || b.getType().name().contains("STEP")) {
-			if (!QAMain.blockbullet_halfslabs && ((l.getY() - l.getBlockY() > 0.5 && b.getData() == 0)
-					|| (l.getY() - l.getBlockY() <= 0.5 && b.getData() == 1)))
+		if (b.getBlockData() instanceof Slab slab) {
+			if (!QAMain.blockbullet_halfslabs && ((l.getY() - l.getBlockY() > 0.5 && slab.getType() == Slab.Type.BOTTOM)
+					|| (l.getY() - l.getBlockY() <= 0.5 && slab.getType() == Slab.Type.TOP)))
 				return false;
 			return true;
 		}
@@ -93,25 +94,7 @@ public class BlockCollisionUtil {
 		}
 
 		if (b.getType().name().contains("STAIR")) {
-			if (b.getData() < 4 && (l.getY() - l.getBlockY() < 0.5))
-				return true;
-			if (b.getData() >= 4 && (l.getY() - l.getBlockY() > 0.5))
-				return true;
-			switch (b.getData()) {
-				case 0:
-				case 4:
-					return l.getX() - (0.5 + l.getBlockX()) > 0;
-				case 1:
-				case 5:
-					return l.getX() - (0.5 + l.getBlockX()) < 0;
-				case 2:
-				case 6:
-					return l.getZ() - (0.5 + l.getBlockZ()) > 0;
-				case 3:
-				case 7:
-					return l.getZ() - (0.5 + l.getBlockZ()) < 0;
-
-			}
+			return true;
 		}
 
 		if (b.getType().name().endsWith("FERN")) {

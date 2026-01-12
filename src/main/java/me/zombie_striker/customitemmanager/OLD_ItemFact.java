@@ -6,6 +6,9 @@ import me.zombie_striker.qg.armor.ArmorObject;
 import me.zombie_striker.qg.guns.Gun;
 import me.zombie_striker.qg.handlers.IronsightsHandler;
 import org.bukkit.ChatColor;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -107,6 +110,7 @@ public class OLD_ItemFact {
 			im.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_DESTROYS);
 		} catch (Error | Exception e34) {
 		}
+        im.addAttributeModifier(Attribute.MOVEMENT_SPEED, new AttributeModifier(new NamespacedKey(QAMain.getInstance(), "ironsights_slow"), -0.3, AttributeModifier.Operation.ADD_SCALAR));
 		ironsights.setItemMeta(im);
 		return ironsights;
 	}

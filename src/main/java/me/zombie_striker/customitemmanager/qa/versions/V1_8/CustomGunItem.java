@@ -55,9 +55,9 @@ public class CustomGunItem extends AbstractCustomGunItem {
 			List<String> lore = base.getCustomLore()!=null?new ArrayList<>(base.getCustomLore()):new ArrayList<>();
 
 			if(base instanceof Gun)
-				lore.addAll(Gun.getGunLore((Gun) base, null, ((Gun) base).getMaxBullets()));
+				lore.addAll(Gun.getGunLore((Gun) base, is, ((Gun) base).getMaxBullets()));
 			if(base instanceof AttachmentBase)
-				lore.addAll(Gun.getGunLore(((AttachmentBase) base).getBaseGun(), null, ((AttachmentBase) base).getMaxBullets()));
+				lore.addAll(Gun.getGunLore(((AttachmentBase) base).getBaseGun(), is, ((AttachmentBase) base).getMaxBullets()));
 			if (base instanceof ArmorObject)
 				lore.addAll(OLD_ItemFact.getArmorLore((ArmorObject) base));
 

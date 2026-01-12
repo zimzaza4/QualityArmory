@@ -6,6 +6,7 @@ import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.github.retrooper.packetevents.event.PacketListener;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
@@ -13,6 +14,7 @@ import com.github.retrooper.packetevents.protocol.teleport.RelativeFlag;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerAbilities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerPositionAndLook;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 import com.google.common.cache.*;
 import com.viaversion.viaversion.api.ViaAPI;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
@@ -28,12 +30,14 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CrossbowMeta;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 public class PacketEventsHandler {
@@ -50,7 +54,7 @@ public class PacketEventsHandler {
     public static void init() {
         packetEventsAPI.getEventManager().registerListener(new PacketListener() {
             @Override
-            public void onPacketSend(PacketSendEvent event) {
+            public void onPacketSend(@NotNull PacketSendEvent event) {
                 Player player = event.getPlayer();
                 if (event.getPacketType() == PacketType.Play.Server.ENTITY_EQUIPMENT) {
                     WrapperPlayServerEntityEquipment packet = new WrapperPlayServerEntityEquipment(event);
@@ -112,7 +116,6 @@ public class PacketEventsHandler {
                         packet.getEquipment().add(new Equipment(EquipmentSlot.MAIN_HAND, SpigotConversionUtil.fromBukkitItemStack(gunItem)));
                     }
                 }
-                /*
                 if (event.getPacketType() == PacketType.Play.Server.PLAYER_ABILITIES) {
                     if (zoomData.containsKey(player)) {
                         WrapperPlayServerPlayerAbilities wrapper = new WrapperPlayServerPlayerAbilities(event);
@@ -120,8 +123,6 @@ public class PacketEventsHandler {
                         wrapper.write();
                     }
                 }
-
-                 */
             }
         }, PacketListenerPriority.HIGH);
 
@@ -144,6 +145,24 @@ public class PacketEventsHandler {
 
          */
     }
+    public static void sendYawChange(Player player, double deltaPitch, double deltaYaw) {
+        Location newLoc = player.getLocation();
+        newLoc.setPitch((float) (newLoc.getPitch() + deltaPitch));
+        int teleportId = random.nextInt() | Integer.MIN_VALUE;
+
+        RelativeFlag flags = RelativeFlag.X.or(RelativeFlag.Y).or(RelativeFlag.Z).or(RelativeFlag.ROTATE_DELTA).or(RelativeFlag.DELTA_X).or(RelativeFlag.DELTA_Y).or(RelativeFlag.DELTA_Z).or(RelativeFlag.PITCH).or(RelativeFlag.YAW);
+        WrapperPlayServerPlayerPositionAndLook packet = new WrapperPlayServerPlayerPositionAndLook(0,0,0, (float) deltaYaw, (float) deltaPitch, flags.getMask(),teleportId, false);
+        PacketEvents.getAPI().getPlayerManager().getUser(player).sendPacket(packet);
+        /*
+        if (packetEventsAPI.getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_3)) {
+            player.teleport(newLoc, TeleportFlag.Relative.VELOCITY_ROTATION, TeleportFlag.Relative.VELOCITY_X, TeleportFlag.Relative.VELOCITY_Y, TeleportFlag.Relative.VELOCITY_Z);
+        } else {
+            player.teleport(newLoc, TeleportFlag.Relative.X, TeleportFlag.Relative.Y, TeleportFlag.Relative.Z, TeleportFlag.Relative.YAW, TeleportFlag.Relative.PITCH);
+        }
+
+         */
+    }
+
 
     public static void setZoom(Player player, float zoom) {
         zoomData.put(player, zoom);
@@ -180,7 +199,9 @@ public class PacketEventsHandler {
     }
 
     public static void addRecoilWithPaperTeleport(Player player, Gun g, boolean useHighRecoil) {
-        sendYawChange(player, -g.getRecoil() * 0.26);
+        double offset = g.getRecoil();
+        double yaw = ThreadLocalRandom.current().nextDouble(-offset, offset);
+        sendYawChange(player, -g.getRecoil() * 0.3, yaw / 3);
         /*
         new BukkitRunnable() {
             double deltaY = g.getRecoil();

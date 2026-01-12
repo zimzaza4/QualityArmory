@@ -48,6 +48,7 @@ public class GunRefillerRunnable {
 
     private BukkitTask r;
     private ItemStack reloadedItem;
+    private ItemStack modifiedOriginalItem;
     private int originalAmount = 0;
     private int addedAmount = 0;
     private Player reloader = null;
@@ -75,14 +76,14 @@ public class GunRefillerRunnable {
 
         this.originalAmount = originalAmount;
         this.addedAmount = reloadAmount - originalAmount;
-
+        this.modifiedOriginalItem = modifiedOriginalItem;
         this.reloadedItem = modifiedOriginalItem.clone();
 
         r = new BukkitRunnable() {
             @Override
             public void run() {
                 ItemMeta newim = modifiedOriginalItem.getItemMeta();
-                boolean shouldContinue = player.getInventory().getHeldItemSlot() == slot;
+                boolean shouldContinue = player.getInventory().getHeldItemSlot() == slot && modifiedOriginalItem.isSimilar(player.getInventory().getItemInHand());
 
                 if (shouldContinue && removeAmmo) {
                     // Check if player still have ammo and remove it
@@ -166,6 +167,19 @@ public class GunRefillerRunnable {
                 } else {
                     QAMain.reloadingTasks.put(player.getUniqueId(), rr);
                 }
+            }
+
+            @Override
+            public synchronized void cancel() throws IllegalStateException {
+                List<GunRefillerRunnable> rr = QAMain.reloadingTasks.get(player.getUniqueId());
+                rr.remove(GunRefillerRunnable.this);
+                if (rr.isEmpty()) {
+                    QAMain.reloadingTasks.remove(player.getUniqueId());
+                } else {
+                    QAMain.reloadingTasks.put(player.getUniqueId(), rr);
+                }
+                modifiedOriginalItem.editMeta(item -> item.setDisplayName(g.getDisplayName()));
+                super.cancel();
             }
         }.runTaskLater(QAMain.getInstance(), (long) (20 * seconds));
 

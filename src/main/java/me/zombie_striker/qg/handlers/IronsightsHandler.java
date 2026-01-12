@@ -34,10 +34,11 @@ public class IronsightsHandler {
 					Bukkit.getPluginManager().callEvent(new WeaponInteractEvent(player, gun, WeaponInteractEvent.InteractType.AIM));
 				}
 				final int ammo = Gun.getAmount(player);
+                Gun g = QualityArmory.getGun(player.getItemInHand());
 
 				player.getInventory().setItemInOffHand(player.getItemInHand());
 				player.setItemInHand(QualityArmory.getIronSightsItemStack());
-				Gun.updateAmmo(null, player, ammo);
+				Gun.updateAmmo(g, player, ammo);
 			}
 	}
 	public static void unAim(Player player){

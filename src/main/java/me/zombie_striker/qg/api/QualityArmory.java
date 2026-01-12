@@ -517,7 +517,7 @@ public class QualityArmory {
 					message = LocalUtils.colorize(message);
 				}
 				if (QAMain.hasGeyser && GeyserHandler.isFloodgatePlayer(p)) {
-					p.sendTitle("update_ammo:" + g.getAmmoType().getName() + " " + currentAmountInGun + "/" + ammoamount, "",0,0,0);
+					// p.sendTitle("update_ammo:" + g.getAmmoType().getName() + " " + currentAmountInGun + "/" + ammoamount, "",0,0,0);
 				} else {
 					HotbarMessager.sendHotBarMessage(p, message);
 				}

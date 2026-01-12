@@ -2,6 +2,7 @@ package me.zombie_striker.qg.guns;
 
 import com.cryptomorin.xseries.XPotion;
 import de.tr7zw.changeme.nbtapi.NBT;
+import de.tr7zw.changeme.nbtapi.NBTItem;
 import me.zombie_striker.customitemmanager.*;
 import me.zombie_striker.qg.QAMain;
 import me.zombie_striker.qg.ammo.Ammo;
@@ -16,6 +17,7 @@ import me.zombie_striker.qg.guns.utils.GunUtil;
 import me.zombie_striker.qg.guns.utils.WeaponSounds;
 import me.zombie_striker.qg.guns.utils.WeaponType;
 
+import me.zombie_striker.qg.handlers.AimManager;
 import me.zombie_striker.qg.handlers.IronsightsHandler;
 import me.zombie_striker.qg.handlers.Update19OffhandChecker;
 import me.zombie_striker.qg.utils.LocalUtils;
@@ -23,6 +25,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -58,7 +61,7 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     private double swayUnscopedMultiplier = 1;
     private int maxbull;
     private float damage;
-    private int durib = 1000;
+    private int durib = 9000;
     private boolean isAutomatic;
     private double headshotMultiplier = 2;
     private boolean isPrimaryWeapon = true;
@@ -72,9 +75,9 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     private ChargingHandler ch = null;
     private ReloadingHandler rh = null;
     private double swayMovementModifier = 1.5;
-    private double swaySneakModifier = 0.7;
-    private double swayAimModifier = 0.2;
-    private double swayRunModifier = 1.3;
+    private double swaySneakModifier = 0.8;
+    private double swayAimModifier = 0.6;
+    private double swayRunModifier = 1.4;
     private int maxDistance = 150;
     private Particle particle = null;
     private int particle_data = 1;
@@ -176,6 +179,25 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
         NBT.modify(current, nbt -> {
             nbt.setInteger("ammo", amount);
         });
+        if (g == null) {
+            g = QualityArmory.getGun(current);
+        }
+        if (g != null) {
+            Gun finalG = g;
+            current.editMeta(itemMeta -> {
+                if (itemMeta instanceof Damageable damageable) {
+                    int damage;
+                    if (amount != 0) {
+                        float percent = 1 - amount / (float) finalG.getMaxBullets();
+                        damage = (int) Math.min(current.getType().getMaxDurability() - 1, percent * current.getType().getMaxDurability());
+                    } else {
+                        damage = current.getType().getMaxDurability() - 1;
+                    }
+                    damageable.setDamage(damage);
+                }
+            });
+        }
+        current.setLore(getGunLore(g, current, amount));
     }
 
     public static void updateAmmo(Gun g, Player player, int amount) {
@@ -184,64 +206,77 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public static List<String> getGunLore(Gun g, ItemStack current, int amount) {
-        List<String> lore = (current != null && current.hasItemMeta() && current.getItemMeta().hasLore()) ? current.getItemMeta().getLore() : new ArrayList<>();
-        OLD_ItemFact.addVariantData(null, lore, g);
-        if (QAMain.ENABLE_LORE_INFO) {
-            lore.add(QAMain.S_ITEM_DAMAGE + ": " + g.getDamage());
-            lore.add(QAMain.S_ITEM_DPS + ": "
-                    + (g.isAutomatic()
-                    ? (2 * g.getFireRate() * g.getDamage()) + ""
-                    + (g.getBulletsPerShot() > 1 ? "x" + g.getBulletsPerShot() : "")
-                    : "" + ((int) (1.0 / g.getDelayBetweenShotsInSeconds()) * g.getDamage())
-                    + (g.getBulletsPerShot() > 1 ? "x" + g.getBulletsPerShot() : "")));
-            if (g.getAmmoType() != null)
-                lore.add(QAMain.S_ITEM_AMMO + ": " + g.getAmmoType().getDisplayName());
-        }
-        if (QAMain.AutoDetectResourcepackVersion && Bukkit.getPluginManager().isPluginEnabled("ViaRewind")) {
-            if (g.is18Support()) {
-                lore.add(ChatColor.GRAY + "1.8 Weapon");
-            }
-        }
-
-        if (QAMain.enableDurability)
-            if (current == null) {
-                double k = ((double) g.getDamage()) / g.getDurability();
-                ChatColor c = k > 0.5 ? ChatColor.DARK_GREEN : k > 0.25 ? ChatColor.GOLD : ChatColor.DARK_RED;
-                lore.add(c + QAMain.S_ITEM_DURIB + ":" + g.getDurability() + "/" + g.getDurability());
-            } else {
-                lore = setDurabilityDamage(g, lore, getDamage(current));
-            }
-        if (QAMain.ENABLE_LORE_HELP) {
-            if (g.isAutomatic()) {
-                lore.add(QAMain.S_LMB_SINGLE);
-                lore.add(QAMain.S_LMB_FULLAUTO);
-                lore.add(QAMain.S_RMB_RELOAD);
-            } else {
-                lore.add(QAMain.S_LMB_SINGLE);
-                lore.add(QAMain.enableIronSightsON_RIGHT_CLICK ? QAMain.S_RMB_R1 : QAMain.S_RMB_R2);
-                if (g.hasIronSights())
-                    lore.add(QAMain.enableIronSightsON_RIGHT_CLICK ? QAMain.S_RMB_A1 : QAMain.S_RMB_A2);
-            }
-        }
-
-        if (current != null && current.hasItemMeta() && current.getItemMeta().hasLore())
-            for (String s : current.getItemMeta().getLore()) {
-                if (ChatColor.stripColor(s).contains("UUID")) {
-                    lore.add(s);
-                    break;
-                }
-            }
+        List<String> lore = new ArrayList<>(QAMain.gunLore);
+        lore.replaceAll(s -> ChatColor.translateAlternateColorCodes('&', applyGunPlaceholders(s, g, current, amount)));
         return lore;
     }
 
+    public static String applyGunPlaceholders(String s, Gun g, ItemStack current, int amount) {
+        double acc = g.acc;
+        if (g.getWeaponType() == WeaponType.SNIPER) {
+            acc /= 30;
+        }
+        double damage = g.damage;
+        if (g.getBulletsPerShot() > 1) {
+            damage = damage * Math.min(g.getBulletsPerShot(), 5) * 0.6;
+        }
+
+        return s.replace("{bullets}", String.valueOf(amount))
+                .replace("{max_bullets}", String.valueOf(g.getMaxBullets()))
+                .replace("{damage}", String.format("%.2f", damage))
+                .replace("{damage_bar}", drawBar(damage, 50, 29, '·'))
+                .replace("{speed_bar}", drawBar(g.firerate, 7, 29, '·'))
+                .replace("{acc_bar}", drawBar(Math.max(1 - acc, 0.01), 1, 29, '·'))
+                .replace("{distance_bar}", drawBar(Math.min(g.getMaxDistance(), 400), 400, 29, '·'))
+                .replace("{recoil_bar}", drawBar(g.recoil, 10, 29, '·'))
+                .replace("{dura_bar}", drawDurabilityBar(Gun.getDamage(current), g.getDurability(), 29, '·'))
+                ;
+    }
+
+    public static String drawDurabilityBar(double value, double max, int len, char c) {
+
+        double percent = Math.min(value / max, 1.0);
+        StringBuilder builder = new StringBuilder();
+        if (percent > 0.7) {
+            builder.append(ChatColor.GREEN);
+        } else if (percent > 0.35) {
+            builder.append(ChatColor.YELLOW);
+        } else if (percent > 0) {
+            builder.append(ChatColor.RED);
+        }
+        int light = (int) (percent * len);
+        int dark = len - light;
+
+        for (int i = 0; i < light; i++) {
+            builder.append(c);
+        }
+
+        builder.append(ChatColor.GRAY.toString());
+        for (int i = 0; i < dark; i++) {
+            builder.append(c);
+        }
+        return builder.toString();
+    }
+
+    public static String drawBar(double value, double max, int len, char c) {
+        StringBuilder builder = new StringBuilder(ChatColor.AQUA.toString());
+        double percent = Math.min(value / max, 1.0);
+        int light = (int) (percent * len);
+        int dark = len - light;
+
+        for (int i = 0; i < light; i++) {
+            builder.append(c);
+        }
+
+        builder.append(ChatColor.GRAY.toString());
+        for (int i = 0; i < dark; i++) {
+            builder.append(c);
+        }
+        return builder.toString();
+    }
+
     public static int getDamage(ItemStack is) {
-        if (is != null && is.hasItemMeta() && is.getItemMeta().hasLore())
-            for (String lore : is.getItemMeta().getLore()) {
-                if (ChatColor.stripColor(lore).startsWith(ChatColor.stripColor(QAMain.S_ITEM_DURIB))) {
-                    return Integer.parseInt(lore.split(":")[1].split("/")[0].trim());
-                }
-            }
-        return -1;
+        return NBT.get(is, nbt -> nbt.hasTag("gun_item_damage") ? nbt.getInteger("gun_item_damage") : 9000);
     }
 
     public static ItemStack durabilityDamage(Gun g, ItemStack is) {
@@ -249,9 +284,7 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public static ItemStack setDurabilityDamage(Gun g, ItemStack is, int damage) {
-        ItemMeta im = is.getItemMeta();
-        im.setLore(setDurabilityDamage(g, im.getLore(), damage));
-        is.setItemMeta(im);
+        NBT.modify(is, nbt -> { nbt.setInteger("gun_item_damage", damage); });
         return is;
     }
 
@@ -637,23 +670,20 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
     }
 
     public double getSway() {
-        return acc / 100;
-    }
-
-    public double getBigSway() {
         return acc;
     }
 
+    public double getBigSway() {
+        return acc * 0.8;
+    }
+
     public double getSway(UUID player) {
-        /*
         AtomicInteger counter = AimManager.SHOOT_COUNTER.get(player);
         if (counter == null) {
             return getSway();
         }
-        return acc / 100 * (counter.get() * 5);
-
-         */
-        return getSway();
+        return acc / 10 * (counter.get() * 5);
+        // return getSway();
     }
 
     public double getMaxSway() {
@@ -891,6 +921,7 @@ public class Gun extends CustomBaseObject implements ArmoryBaseObject, Comparabl
                         if (offhand) {
                             //updateAmmo(this,player.getInventory().getItemInOffHand(), getAmount(player.getItemInHand()));
                             IronsightsHandler.unAim(player);
+                            usedItem = player.getPlayer().getItemInHand();
                             offhand = false;
                         }
                         if (QAMain.allowGunReload) {

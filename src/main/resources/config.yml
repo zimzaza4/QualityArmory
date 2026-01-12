@@ -103,3 +103,16 @@ IronSightsOnRightClick: false
 SwapSneakToSingleFile: false
 DestructableMaterials:
   - MATERIAL_NAME_HERE
+gun_lore:
+  - ""
+  - "&f· &7弹药: &f{bullets}/{max_bullets}"
+  - ""
+  - "&f· &7伤害:    {damage_bar} {damage}"
+  - "&f· &7射速:    {speed_bar}"
+  - "&f· &7精度:    {acc_bar}"
+  - "&f· &7距离:    {distance_bar}"
+  - "&f· &7后坐力:  {recoil_bar}"
+  - ""
+  - "&f· &e耐久:    {dura_bar}"
+  - ""
+  - "&7右键发射 左键瞄准 F键换弹"

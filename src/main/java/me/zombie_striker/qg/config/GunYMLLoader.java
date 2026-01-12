@@ -353,7 +353,7 @@ public class GunYMLLoader {
 		if (f2.contains("sway.runModifier"))
 			g.setSwayRunModifier(f2.getDouble("sway.runModifier"));
 		if (f2.contains("sway.aimModifier"))
-			g.setSwayRunModifier(f2.getDouble("sway.aimModifier"));
+			g.setSwayAimModifier(f2.getDouble("sway.aimModifier"));
 		if (f2.contains("DestructableMaterials")) {
 			g.getBreakableMaterials().clear();
 			g.getBreakableMaterials().addAll(getMaterials(f2.getStringList("DestructableMaterials")));

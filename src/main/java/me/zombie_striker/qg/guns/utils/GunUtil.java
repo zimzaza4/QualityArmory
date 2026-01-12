@@ -59,10 +59,12 @@ public class GunUtil {
 	}
 
 	public static void shootHandler(Gun g, Player p, int numberOfBullets) {
-		double sway = g.getSway(p.getUniqueId()) * AimManager.getSway(g, p.getUniqueId());
+		double sway = AimManager.getSway(g, p.getUniqueId());
+
 		if (numberOfBullets > 1) {
-			sway = g.getBigSway() * AimManager.getBigSway(g, p.getUniqueId());;
+			sway = g.getBigSway(); //* AimManager.getBigSway(g, p.getUniqueId());;
 		}
+        QAMain.DEBUG("+++++++++Current Sway:" + sway);
 		AtomicInteger counter = AimManager.SHOOT_COUNTER.get(p.getUniqueId());
 		if (counter != null) {
 			if (counter.get() + 2 < 20) {
@@ -108,10 +110,6 @@ public class GunUtil {
 
 	@SuppressWarnings("deprecation")
 	public static void shootInstantVector(Gun g, Player p, double sway, double baseDamage, int shots, int range) {
-		if (shots <= 1 && g.getWeaponType() != WeaponType.SNIPER) {
-			sway = sway * 1.7;
-		}
-
 		QAMain.DEBUG("W Type: " + g.getWeaponType());
 		boolean timingsReport = false;
 		long time1 = System.currentTimeMillis();
@@ -128,6 +126,8 @@ public class GunUtil {
 			offsetCache.put(p, level + 1);
 		}
 
+        level = Math.min(level, 18);
+
 		for (int i = 0; i < shots; i++) {
 			double damage = baseDamage;
 			Location start = p.getEyeLocation().clone();
@@ -137,20 +137,30 @@ public class GunUtil {
 			QAMain.DEBUG("R OFFSET LEVEL:" + level);
 
 			Vector normalizedDirection = p.getLocation().getDirection().normalize();
+
 			if (shots > 1) {
-				normalizedDirection.add(new Vector(((Math.random() * 2 * sway) - sway), (Math.random() * 2 * sway) - sway,
-						((Math.random() * 2 * sway) - sway)));
+                damage = damage * 0.6;
+                Vector offset = new Vector((Math.random() - 0.5) * 2 * sway, (Math.random() - 0.5) * 2 * sway,
+                        (Math.random() - 0.5) * 2 * sway);
+                normalizedDirection.add(offset);
 			} else {
-				double m = Math.min(sway, sway * (level / 12d));
-				if (level < 4) {
-					m = 0.01;
-				}
+				double m = Math.max(0.05, level / 60d);
 				if (g.getWeaponType() == WeaponType.SNIPER) {
-					m = 1;
+                    if (!IronsightsHandler.isAiming(p)) {
+                        m = 0.04;
+                        sway = sway + 2;
+                    } else {
+                        m = 0.02;
+                    }
 				}
-				normalizedDirection.add(new Vector(m * ((Math.random() * 2 * sway) - sway), 0.05 * ((Math.random() * 2 * sway) - sway),
-						m * ((Math.random() * 2 * sway) - sway)));
+                m *= 0.2;
+                QAMain.DEBUG("SWAY FINAL: " + m * sway * 0.2);
+                Vector offset = new Vector(m * (Math.random() - 0.5) * 2 * sway, 0.05 * (Math.random() - 0.5) * 2 * sway,
+                        m * (Math.random() - 0.5) * 2 * sway);
+
+                normalizedDirection.add(offset);
 			}
+
 			normalizedDirection = normalizedDirection.normalize();
 			Vector step = normalizedDirection.clone().multiply(QAMain.bulletStep);
 
@@ -239,7 +249,9 @@ public class GunUtil {
 								//headShot = box.allowsHeadshots() ? box.intersectsHead(bulletLocationTest, e) : false;
 
 								if (!QAMain.piercing) {
-									break main;
+                                    if (g.getWeaponType() != WeaponType.SNIPER) {
+                                        break main;
+                                    }
 								}
 
 								for (HitResult hitResult : results) {
@@ -498,7 +510,7 @@ public class GunUtil {
 						new BukkitRunnable() {
 							@Override
 							public void run() {
-								QAMain.DEBUG("Replacing " + regenBlocks.size() + " blocks");
+								//QAMain.DEBUG("Replacing " + regenBlocks.size() + " blocks");
 
 								for (Block l : regenBlocks.keySet()) {
 									l.setType(regenBlocks.get(l));
@@ -646,7 +658,6 @@ public class GunUtil {
 					}
 
 					ItemStack temp = IronsightsHandler.getItemAiming(player);
-
 					if (QAMain.enableDurability && g.getDamage(temp) <= 0) {
 						player.playSound(player.getLocation(), WeaponSounds.METALHIT.getSoundName(), 1, 1);
 						rapidfireshooters.remove(player.getUniqueId());
@@ -656,6 +667,7 @@ public class GunUtil {
 					}
 
 					int amount = Gun.getAmount(player);
+
 					if(holdingRMB && !QAMain.SWAP_TO_LMB_SHOOT){
 						if(System.currentTimeMillis()-g.getLastTimeRMB(player) > 310){
 							rapidfireshooters.remove(player.getUniqueId());
@@ -694,12 +706,24 @@ public class GunUtil {
 						amount = 0;
 
 					int slot;
+                    boolean offhand = IronsightsHandler.isAiming(player);
 					if (offhand) {
 						slot = -1;
 					} else {
 						slot = player.getInventory().getHeldItemSlot();
 					}
-					Gun.updateAmmo(g, player.getItemInHand(), amount);
+
+
+                    QAMain.DEBUG("UPDATE AMMO TO:" + amount);
+
+                    if (offhand) {
+                        Gun.updateAmmo(g, player.getItemInHand(), amount);
+                        QAMain.DEBUG("1 ammo in main hand to: " + amount);
+                    } else {
+                        Gun.updateAmmo(g, temp, amount);
+                        QAMain.DEBUG("2 ammo in main hand to: " + amount);
+                    }
+
 					if(QAMain.showAmmoInXPBar){
 						updateXPBar(player,g,amount);
 					}
@@ -707,7 +731,7 @@ public class GunUtil {
 					if (slot == -1) {
 						try {
 							if (QualityArmory.isIronSights(player.getItemInHand())) {
-								player.getInventory().setItemInOffHand(temp);
+								// player.getInventory().setItemInOffHand(temp);
 								QAMain.DEBUG("Sett Offhand because ironsights in main hand");
 							} else {
 								player.getInventory().setItemInHand(temp);
@@ -721,7 +745,7 @@ public class GunUtil {
 						if (QualityArmory.isIronSights(tempCheck)) {
 							CustomBaseObject tempBase = QualityArmory.getCustomItem(Update19OffhandChecker.getItemStackOFfhand(player));
 							if (tempBase != null && tempBase == g) {
-								Update19OffhandChecker.setOffhand(player, temp);
+								// Update19OffhandChecker.setOffhand(player, temp);
 							}
 						} else {
 							player.getInventory().setItem(slot, temp);
@@ -749,7 +773,7 @@ public class GunUtil {
 		if (slot == -1) {
 			try {
 				if (QualityArmory.isIronSights(player.getItemInHand())) {
-					player.getInventory().setItemInOffHand(firstGunInstance);
+					// player.getInventory().setItemInOffHand(firstGunInstance);
 					QAMain.DEBUG("Sett Offhand because ironsights in main hand");
 				} else {
 					player.getInventory().setItemInHand(firstGunInstance);
